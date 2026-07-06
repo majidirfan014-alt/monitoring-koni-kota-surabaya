@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoring KONI Kota Surabaya</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Firebase SDK v9 Compat -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #1e3a5f;
+            --primary-light: #2a5298;
+            --accent: #e8a838;
+            --accent-hover: #d4952e;
+            --bg: #f0f4f8;
+            --card-bg: #ffffff;
+            --text: #1a1a2e;
+            --text-light: #64748b;
+            --shadow: 0 4px 24px rgba(0,0,0,0.08);
+            --shadow-hover: 0 12px 40px rgba(0,0,0,0.15);
+            --radius: 16px;
+        }
+
+        body.dark {
+            --primary: #60a5fa;
+            --primary-light: #93c5fd;
+            --accent: #fbbf24;
+            --accent-hover: #f59e0b;
+            --bg: #111827;
+            --card-bg: #1f2937;
+            --text: #f3f4f6;
+            --text-light: #9ca3af;
+            --shadow: 0 4px 24px rgba(0,0,0,0.3);
+            --shadow-hover: 0 12px 40px rgba(0,0,0,0.5);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ===== HEADER ===== */
+        /* Header now uses Tailwind CSS classes */
+
+        /* ===== MAIN CONTENT ===== */
+        .main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-light);
+        }
+
+        .section-title span {
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        /* ===== GRID CABOR ===== */
+        .grid-cabor {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+
+        .card-cabor {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 1.5rem 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: var(--shadow);
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-cabor::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent), var(--primary-light));
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .card-cabor:hover::before {
+            transform: scaleX(1);
+        }
+
+        .card-cabor:hover {
+            transform: translateY(-6px);
+            box-shadow: var(--shadow-hover);
+            border-color: var(--accent);
+        }
+
+        .card-cabor:active {
+            transform: translateY(-2px) scale(0.98);
+        }
+
+        .card-cabor .icon {
+            font-size: 2rem;
+            margin-bottom: 0.75rem;
+            display: block;
+            transition: transform 0.3s ease;
+        }
+
+        .card-cabor:hover .icon {
+            transform: scale(1.15);
+        }
+
+        .card-cabor .name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text);
+            line-height: 1.3;
+        }
+
+        /* ===== CARD TAMBAH CABOR ===== */
+        .card-tambah {
+            background: transparent;
+            border: 3px dashed #cbd5e1;
+            border-radius: var(--radius);
+            padding: 1.5rem 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 140px;
+        }
+
+        .card-tambah:hover {
+            border-color: var(--accent);
+            background: rgba(232, 168, 56, 0.05);
+            transform: translateY(-4px);
+        }
+
+        .card-tambah .icon {
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            color: var(--accent);
+            font-weight: 300;
+        }
+
+        .card-tambah .name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-light);
+        }
+
+        /* ===== MODAL TAMBAH CABOR ===== */
+        .icon-preview {
+            width: 56px;
+            height: 56px;
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin: 0 auto 0.75rem;
+            transition: border-color 0.2s;
+        }
+
+        .icon-preview:hover {
+            border-color: var(--accent);
+        }
+
+        .form-group select.icon-select {
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            padding-right: 2.5rem;
+            cursor: pointer;
+            font-size: 1.05rem;
+        }
+
+        .form-group select.icon-select option {
+            font-size: 1rem;
+            padding: 0.5rem;
+        }
+
+        /* ===== MODAL OVERLAY ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(6px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+            animation: fadeIn 0.25s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* ===== MODAL LOGIN ===== */
+        .modal {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 2.5rem 2rem;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 25px 80px rgba(0,0,0,0.25);
+            animation: slideUp 0.3s ease;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.3rem;
+            cursor: pointer;
+            color: var(--text-light);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: #f1f5f9;
+            color: var(--text);
+        }
+
+        .modal h3 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 0.3rem;
+            color: var(--primary);
+        }
+
+        .modal .cabor-label {
+            font-size: 0.9rem;
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-light);
+            margin-bottom: 0.4rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group select,
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-family: 'Inter', sans-serif;
+            transition: border-color 0.2s;
+            background: #f8fafc;
+            color: var(--text);
+            outline: none;
+        }
+
+        .form-group select:focus,
+        .form-group input:focus {
+            border-color: var(--primary-light);
+            background: white;
+        }
+
+        /* Dark Mode form inputs */
+        body.dark .form-group select,
+        body.dark .form-group input {
+            background: #374151;
+            border-color: #4b5563;
+            color: #f3f4f6;
+        }
+        body.dark .form-group select:focus,
+        body.dark .form-group input:focus {
+            background: #4b5563;
+            border-color: var(--primary-light);
+        }
+        body.dark .form-group select option {
+            background: #374151;
+            color: #f3f4f6;
+        }
+        body.dark .icon-preview {
+            background: #374151;
+            border-color: #4b5563;
+        }
+        body.dark .modal-close:hover {
+            background: #374151;
+        }
+        }
+
+        .form-group input::placeholder {
+            color: #94a3b8;
+        }
+
+        .btn-masuk {
+            width: 100%;
+            padding: 0.85rem;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 0.5rem;
+            letter-spacing: 0.3px;
+        }
+
+        .btn-masuk:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(30,58,95,0.35);
+        }
+
+        .btn-masuk:active {
+            transform: translateY(0);
+        }
+
+        /* ===== DASHBOARD ===== */
+        .dashboard {
+            display: none;
+            min-height: 100vh;
+            background: var(--bg);
+        }
+
+        .dashboard.active {
+            display: block;
+        }
+
+        .dash-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .dash-header h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .btn-logout {
+            padding: 0.6rem 1.2rem;
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .btn-logout:hover {
+            background: rgba(255,255,255,0.25);
+            border-color: rgba(255,255,255,0.5);
+        }
+
+        .dash-body {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .welcome-card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 3rem 2rem;
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+
+        .welcome-card .avatar {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--accent), #f0c76e);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            font-size: 2rem;
+        }
+
+        .welcome-card h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .welcome-card .info-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: #eef2ff;
+            color: var(--primary-light);
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+
+        .welcome-card .info-badge i {
+            color: var(--accent);
+        }
+
+        .welcome-card p {
+            color: var(--text-light);
+            margin-top: 1.5rem;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 600px) {
+            .grid-cabor {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 0.75rem;
+            }
+
+            .card-cabor {
+                padding: 1.2rem 0.75rem;
+            }
+
+            .card-cabor .icon {
+                font-size: 1.6rem;
+            }
+
+            .card-cabor .name {
+                font-size: 0.75rem;
+            }
+
+            .modal {
+                padding: 2rem 1.5rem;
+            }
+
+            .dash-header {
+                padding: 1rem 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== HALAMAN UTAMA ===== -->
+    <div id="homePage">
+        <header class="bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 shadow-lg">
+            <div class="flex justify-between items-center w-full px-6 py-5">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-yellow-500 rounded-xl flex items-center justify-center shadow-md">
+                        <i class="fas fa-trophy text-white text-xl"></i>
+                    </div>
+                    <div class="flex flex-col text-left">
+                        <h1 class="text-2xl font-bold tracking-tight text-white">Sistem Monitoring KONI Kota Surabaya</h1>
+                        <p class="text-sm font-medium text-blue-200 mt-1">Platform Pemantauan Prestasi Cabang Olahraga</p>
+                    </div>
+                </div>
+                <button onclick="toggleDarkMode()" id="darkModeBtn" class="flex items-center gap-2 border border-white/30 bg-transparent text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-white/10 transition-colors cursor-pointer">
+                    <i class="fas fa-moon"></i> <span id="darkModeText">Dark</span>
+                </button>
+            </div>
+        </header>
+
+        <main class="main">
+            <div class="section-title">
+                <h2>Daftar <span>Cabang Olahraga</span> — Klik untuk Login</h2>
+            </div>
+            <div class="grid-cabor" id="gridCabor"></div>
+        </main>
+    </div>
+
+    <!-- ===== MODAL LOGIN ===== -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <button class="modal-close" id="modalClose"><i class="fas fa-times"></i></button>
+            <h3><i class="fas fa-right-to-bracket"></i> Login</h3>
+            <span class="cabor-label" id="modalCaborLabel"></span>
+
+            <form id="loginForm" onsubmit="return false;">
+                <div class="form-group">
+                    <label>Hak Akses</label>
+                    <select id="loginRole" required>
+                        <option value="">— Pilih Hak Akses —</option>
+                        <option value="Tim Monev">Tim Monev</option>
+                        <option value="Pelatih">Pelatih</option>
+                        <option value="Atlet">Atlet</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="loginUser" placeholder="Masukkan username" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <div class="relative">
+                        <input type="password" id="loginPass" placeholder="Masukkan password" class="w-full pr-10" required>
+                        <button type="button" onclick="togglePassword()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 cursor-pointer hover:text-gray-600 dark:hover:text-white transition">
+                            <i id="togglePassIcon" class="fas fa-eye text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+                <button type="submit" class="btn-masuk" id="btnMasuk">
+                    <i class="fas fa-arrow-right-to-bracket"></i> Masuk
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== MODAL TAMBAH CABOR ===== -->
+    <div class="modal-overlay" id="addModalOverlay">
+        <div class="modal">
+            <button class="modal-close" id="addModalClose"><i class="fas fa-times"></i></button>
+            <h3><i class="fas fa-plus-circle"></i> Tambah Cabor Baru</h3>
+            <span class="cabor-label">Isi data cabang olahraga baru</span>
+
+            <form id="addCaborForm" onsubmit="return false;">
+                <div class="icon-preview" id="iconPreview">🏟️</div>
+                <div class="form-group">
+                    <label>Nama Cabang Olahraga</label>
+                    <input type="text" id="addCaborName" placeholder="Contoh: Sepak Takraw" required>
+                </div>
+                <div class="form-group">
+                    <label>Pilih Icon</label>
+                    <select id="addCaborIcon" class="icon-select" required>
+                        <option value="🏟️">🏟️ — Stadion / Umum</option>
+                        <option value="🏃">🏃 — Atletik / Lari</option>
+                        <option value="🏹">🏹 — Panahan</option>
+                        <option value="🏋️">🏋️ — Angkat Besi / Gym</option>
+                        <option value="🏊">🏊 — Renang</option>
+                        <option value="🏓">🏓 — Pickleball / Ping Pong</option>
+                        <option value="🏸">🏸 — Bulutangkis</option>
+                        <option value="⚽">⚽ — Sepak Bola</option>
+                        <option value="🏀">🏀 — Basket</option>
+                        <option value="🏐">🏐 — Voli</option>
+                        <option value="🥊">🥊 — Tinju / Kickboxing</option>
+                        <option value="🥋">🥋 — Pencak Silat / Beladiri</option>
+                        <option value="🤼">🤼 — Judo / Gulat</option>
+                        <option value="🦶">🦶 — Taekwondo</option>
+                        <option value="🎯">🎯 — Target / Tembak</option>
+                        <option value="🏇">🏇 — Berkuda</option>
+                        <option value="🚴">🚴 — Bersepeda</option>
+                        <option value="⛹️">⛹️ — Bola Basket / Futsal</option>
+                        <option value="🤸">🤸 — Senam / Gymnastic</option>
+                        <option value="🤾">🤾 — Bola Tangan</option>
+                        <option value="🏌️">🏌️ — Golf</option>
+                        <option value="🏂">🏂 — Ski / Salju</option>
+                        <option value="🏄">🏄 — Surfing / Ombak</option>
+                        <option value="⛵">⛵ — Layar / Perahu</option>
+                        <option value="🤽">🤽 — Polo Air / Waterpolo</option>
+                        <option value="🚣">🚣 — Dayung / Kano</option>
+                        <option value="🤿">🤿 — Selam / Diving</option>
+                        <option value="🏏">🏏 — Kriket</option>
+                        <option value="⚾">⚾ — Baseball</option>
+                        <option value="🏉">🏉 — Rugby</option>
+                        <option value="🎿">🎿 — Ski</option>
+                        <option value="🥅">🥅 — Gawang / Goal</option>
+                        <option value="🏒">🏒 — Hoki</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-masuk" id="btnAddCabor">
+                    <i class="fas fa-plus"></i> Tambahkan
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== DASHBOARD ===== -->
+    <div class="dashboard" id="dashboardPage">
+        <div class="dash-header">
+            <h2><i class="fas fa-chart-line"></i> Dashboard Monitoring</h2>
+            <button class="btn-logout" id="btnLogout">
+                <i class="fas fa-right-from-bracket"></i> Logout
+            </button>
+        </div>
+        <div class="dash-body">
+            <div class="welcome-card">
+                <div class="avatar"><i class="fas fa-user"></i></div>
+                <h2 id="welcomeText"></h2>
+                <div class="info-badge" id="infoBadge"></div>
+                <p>Selamat datang di Sistem Monitoring KONI Kota Surabaya. Silakan pantau data dan progres latihan sesuai dengan hak akses Anda.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== FIREBASE CONFIG =====
+        const firebaseConfig = {
+            apiKey: "AIzaSyBxCRCpCn6BcwnWv7KL1dvQOLWTbJVO_0Y",
+            authDomain: "monitoring-koni-kota-surabaya.firebaseapp.com",
+            projectId: "monitoring-koni-kota-surabaya",
+            storageBucket: "monitoring-koni-kota-surabaya.firebasestorage.app",
+            messagingSenderId: "72570551611",
+            appId: "1:72570551611:web:bde360e36c7109aa6acb1e"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // ===== FIREBASE HELPERS =====
+        async function fbAddDoc(collection, data) {
+            try {
+                const docRef = await db.collection(collection).add(data);
+                return docRef.id;
+            } catch (e) {
+                console.error('Error adding document:', e);
+                showToast('Gagal terhubung ke server/database', 'danger');
+                throw e;
+            }
+        }
+
+        async function fbGetDocs(collection, conditions = []) {
+            try {
+                let ref = db.collection(collection);
+                conditions.forEach(c => {
+                    ref = ref.where(c.field, c.operator, c.value);
+                });
+                const snapshot = await ref.get();
+                return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            } catch (e) {
+                console.error('Error getting documents:', e);
+                showToast('Gagal terhubung ke server/database', 'danger');
+                throw e;
+            }
+        }
+
+        async function fbDeleteDoc(collection, id) {
+            try {
+                await db.collection(collection).doc(id).delete();
+            } catch (e) {
+                console.error('Error deleting document:', e);
+                showToast('Gagal terhubung ke server/database', 'danger');
+                throw e;
+            }
+        }
+
+        async function fbUpdateDoc(collection, id, data) {
+            try {
+                await db.collection(collection).doc(id).update(data);
+            } catch (e) {
+                console.error('Error updating document:', e);
+                showToast('Gagal terhubung ke server/database', 'danger');
+                throw e;
+            }
+        }
+
+        // ===== DATA CABOR =====
+        let caborList = [
+            { name: "Atletik", icon: "🏃" },
+            { name: "Panahan", icon: "🏹" },
+            { name: "Angkat Besi", icon: "🏋️" },
+            { name: "Renang", icon: "🏊" },
+            { name: "Pickleball", icon: "🏓" },
+            { name: "Bulutangkis", icon: "🏸" },
+            { name: "Sepak Bola", icon: "⚽" },
+            { name: "Basket", icon: "🏀" },
+            { name: "Voli", icon: "🏐" },
+            { name: "Tinju", icon: "🥊" },
+            { name: "Pencak Silat", icon: "🥋" },
+            { name: "Judo", icon: "🤼" },
+            { name: "Taekwondo", icon: "🦶" },
+            { name: "Karate", icon: "🥊" },
+        ];
+
+        // ===== DATABASE AKUN PER CABOR =====
+        const akunCabor = {
+            "Pickleball": {
+                "Tim Monev": { user: "pickelballmonev", pass: "surabayajuara" },
+                "Pelatih":  { user: "pickelballpelatih", pass: "surabayajuara" },
+                "Atlet":    { user: "pickelballatlet", pass: "surabayajuara" },
+            }
+        };
+
+        function getCredential(cabor, role) {
+            if (akunCabor[cabor] && akunCabor[cabor][role]) {
+                return akunCabor[cabor][role];
+            }
+            const slug = cabor.toLowerCase().replace(/\s+/g, '');
+            return { user: slug + role.toLowerCase().replace(/\s+/g, ''), pass: "surabayajuara" };
+        }
+
+        // ===== ELEMEN =====
+        const gridCabor = document.getElementById('gridCabor');
+        const modalOverlay = document.getElementById('modalOverlay');
+        const modalCaborLabel = document.getElementById('modalCaborLabel');
+        const modalClose = document.getElementById('modalClose');
+        const loginForm = document.getElementById('loginForm');
+        const homePage = document.getElementById('homePage');
+        const dashboardPage = document.getElementById('dashboardPage');
+        const welcomeText = document.getElementById('welcomeText');
+        const infoBadge = document.getElementById('infoBadge');
+        const btnLogout = document.getElementById('btnLogout');
+
+        const addModalOverlay = document.getElementById('addModalOverlay');
+        const addModalClose = document.getElementById('addModalClose');
+        const addCaborForm = document.getElementById('addCaborForm');
+        const iconPreview = document.getElementById('iconPreview');
+        const addCaborIconSelect = document.getElementById('addCaborIcon');
+
+        let selectedCabor = '';
+
+        // ===== ICON PREVIEW =====
+        addCaborIconSelect.addEventListener('change', () => {
+            iconPreview.textContent = addCaborIconSelect.value;
+        });
+
+        // ===== RENDER GRID =====
+        function renderGrid() {
+            gridCabor.innerHTML = '';
+
+            caborList.forEach((c) => {
+                const card = document.createElement('div');
+                card.className = 'card-cabor';
+                card.innerHTML = `<span class="icon">${c.icon}</span><span class="name">${c.name}</span>`;
+                card.addEventListener('click', () => openLoginModal(c.name));
+                gridCabor.appendChild(card);
+            });
+
+            // Tombol Tambah Cabor
+            const addCard = document.createElement('div');
+            addCard.className = 'card-tambah';
+            addCard.innerHTML = `<span class="icon">+</span><span class="name">Tambah Cabor</span>`;
+            addCard.addEventListener('click', openAddModal);
+            gridCabor.appendChild(addCard);
+        }
+
+        // ===== MODAL LOGIN =====
+        function openLoginModal(cabor) {
+            selectedCabor = cabor;
+            modalCaborLabel.textContent = `Cabor: ${cabor}`;
+            loginForm.reset();
+            modalOverlay.classList.add('active');
+        }
+
+        modalClose.addEventListener('click', () => {
+            modalOverlay.classList.remove('active');
+        });
+
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) modalOverlay.classList.remove('active');
+        });
+
+        // ===== MODAL TAMBAH CABOR =====
+        function openAddModal() {
+            addCaborForm.reset();
+            iconPreview.textContent = addCaborIconSelect.value;
+            addModalOverlay.classList.add('active');
+        }
+
+        addModalClose.addEventListener('click', () => {
+            addModalOverlay.classList.remove('active');
+        });
+
+        addModalOverlay.addEventListener('click', (e) => {
+            if (e.target === addModalOverlay) addModalOverlay.classList.remove('active');
+        });
+
+        addCaborForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('addCaborName').value.trim();
+            const icon = addCaborIconSelect.value;
+
+            if (!name) return;
+
+            // Cek duplikat
+            const exists = caborList.some(c => c.name.toLowerCase() === name.toLowerCase());
+            if (exists) {
+                alert('Cabor dengan nama tersebut sudah ada!');
+                return;
+            }
+
+            caborList.push({ name, icon });
+            addModalOverlay.classList.remove('active');
+            renderGrid();
+        });
+
+        // ===== LOGIN =====
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const role = document.getElementById('loginRole').value;
+            const user = document.getElementById('loginUser').value.trim();
+            const pass = document.getElementById('loginPass').value;
+
+            if (!role || !user || !pass) {
+                showToast('Harap lengkapi semua data!','error');
+                return;
+            }
+
+            // Show loading
+            const btnMasuk = document.getElementById('btnMasuk');
+            const originalText = btnMasuk.innerHTML;
+            btnMasuk.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+            btnMasuk.disabled = true;
+
+            try {
+                // Validate against static credentials
+                let validUser = '', validPass = '';
+                if (role === 'Tim Monev') {
+                    validUser = 'timmonev';
+                    validPass = 'pickelballjuara';
+                } else if (role === 'Pelatih') {
+                    validUser = 'timpelatih';
+                    validPass = 'pickelballjuara';
+                } else if (role === 'Atlet') {
+                    validUser = 'atlet';
+                    validPass = 'pickelballjuara';
+                }
+
+                if (user === validUser && pass === validPass) {
+                    modalOverlay.classList.remove('active');
+                    // Store login session in sessionStorage (not localStorage)
+                    sessionStorage.setItem('loginData', JSON.stringify({ cabor: selectedCabor, user, role }));
+                    showToast('Login Berhasil!','success');
+
+                    if (role === 'Atlet') {
+                        window.location.href = 'atlet.html?cabor=' + encodeURIComponent(selectedCabor);
+                    } else if (role === 'Pelatih') {
+                        window.location.href = 'pelatih.html?cabor=' + encodeURIComponent(selectedCabor);
+                    } else if (role === 'Tim Monev') {
+                        window.location.href = 'monev.html?cabor=' + encodeURIComponent(selectedCabor);
+                    }
+                } else {
+                    document.getElementById('loginPass').value = '';
+                    showToast('Username atau Password salah untuk hak akses ini!','error');
+                }
+            } catch (err) {
+                showToast('Gagal terhubung ke server/database', 'danger');
+            } finally {
+                btnMasuk.innerHTML = originalText;
+                btnMasuk.disabled = false;
+            }
+        });
+
+        // ===== DASHBOARD =====
+        function showDashboard(role, user, cabor) {
+            homePage.style.display = 'none';
+            dashboardPage.classList.add('active');
+            welcomeText.textContent = `Selamat Datang, ${role} — Cabor ${cabor}`;
+            infoBadge.innerHTML = `<i class="fas fa-id-badge"></i> ${user || 'User'} &nbsp;|&nbsp; <i class="fas fa-shield-halved"></i> ${role} &nbsp;|&nbsp; <i class="fas fa-medal"></i> ${cabor}`;
+        }
+
+        // ===== LOGOUT =====
+        btnLogout.addEventListener('click', () => {
+            dashboardPage.classList.remove('active');
+            homePage.style.display = 'block';
+            document.getElementById('loginRole').value = '';
+            sessionStorage.removeItem('loginData');
+        });
+
+        // ===== DARK MODE =====
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark');
+            const isDark = document.body.classList.contains('dark');
+            sessionStorage.setItem('darkMode', isDark);
+            document.getElementById('darkModeText').textContent = isDark ? 'Light' : 'Dark';
+            document.getElementById('darkModeBtn').querySelector('i').className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+        }
+        if (sessionStorage.getItem('darkMode') === 'true') {
+            document.body.classList.add('dark');
+            document.getElementById('darkModeText').textContent = 'Light';
+            document.getElementById('darkModeBtn').querySelector('i').className = 'fas fa-sun';
+        }
+
+        // ===== INIT =====
+        renderGrid();
+
+        // ===== TOAST =====
+        function showToast(m,t){
+            const c=document.getElementById('toastContainer'),
+                  s=document.createElement('div');
+            const bg=t==='success'?'bg-green-500':t==='danger'?'bg-red-500':'bg-red-500';
+            const ic=t==='success'?'fa-check-circle':t==='danger'?'fa-trash-can':'fa-exclamation-circle';
+            s.className=`toast ${bg} text-white px-4 py-2.5 rounded-lg shadow-lg text-[11px] font-medium flex items-center gap-2 max-w-xs`;
+            s.innerHTML=`<i class="fas ${ic}"></i><span>${m}</span>`;
+            c.appendChild(s);
+            setTimeout(()=>s.remove(),3000);
+        }
+
+        // ===== TOGGLE PASSWORD =====
+        function togglePassword(){
+            const inp=document.getElementById('loginPass');
+            const icon=document.getElementById('togglePassIcon');
+            if(inp.type==='password'){
+                inp.type='text';
+                icon.classList.replace('fa-eye','fa-eye-slash');
+            }else{
+                inp.type='password';
+                icon.classList.replace('fa-eye-slash','fa-eye');
+            }
+        }
+    </script>
+
+    <!-- TOAST CONTAINER -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2"></div>
+
+</body>
+</html>

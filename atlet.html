@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Training Logbook Atlet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- Firebase SDK v9 Compat -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: { colors: { primary: { 50:'#eff6ff',100:'#dbeafe',200:'#bfdbfe',300:'#93c5fd',400:'#60a5fa',500:'#3b82f6',600:'#2563eb',700:'#1d4ed8',800:'#1e40af',900:'#1e3a8a' } } } }
+        }
+    </script>
+    <style>
+        @media print { .no-print{display:none!important} body{background:#fff!important} }
+        .slider-track::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#3b82f6;cursor:pointer;margin-top:-5px;box-shadow:0 1px 4px rgba(0,0,0,.2)}
+        .chart-box{position:relative;width:100%}
+        .chart-box canvas{position:absolute;top:0;left:0;width:100%!important;height:100%!important}
+        @keyframes fadeOut{from{opacity:1}to{opacity:0}}
+        .toast{animation:toastIn .3s ease,toastOut .3s ease 2.7s forwards}
+        @keyframes toastIn{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}
+        @keyframes toastOut{from{opacity:1}to{opacity:0;transform:translateX(120%)}}
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 min-h-screen transition-colors">
+
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="fixed top-0 left-0 h-full w-56 bg-white dark:bg-gray-800 shadow-xl z-50 transform -translate-x-full lg:translate-x-0 transition-transform no-print">
+        <div class="px-4 py-3 border-b dark:border-gray-700">
+            <h1 class="text-sm font-bold text-primary-700 dark:text-primary-300"><i class="fas fa-book-open mr-1.5"></i>Logbook Atlet</h1>
+        </div>
+        <nav class="p-2">
+            <button onclick="showPage('form')" id="navForm" class="nav-btn w-full text-left px-3 py-2 rounded-lg mb-1 font-medium text-xs flex items-center gap-2 bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">
+                <i class="fas fa-pen-to-square w-4"></i> Form Input
+            </button>
+            <button onclick="showPage('history')" id="navHistory" class="nav-btn w-full text-left px-3 py-2 rounded-lg mb-1 font-medium text-xs flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <i class="fas fa-chart-bar w-4"></i> Riwayat & Laporan
+            </button>
+            <button onclick="showPage('prediksi')" id="navPrediksi" class="nav-btn w-full text-left px-3 py-2 rounded-lg mb-1 font-medium text-xs flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <i class="fas fa-chess w-4"></i> Prediksi Lawan
+            </button>
+        </nav>
+        <div class="absolute bottom-0 left-0 right-0 p-2 border-t dark:border-gray-700">
+            <button onclick="toggleDarkMode()" class="w-full px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <i class="fas fa-moon dark:hidden"></i><i class="fas fa-sun hidden dark:inline"></i>
+                <span class="dark:hidden">Dark Mode</span><span class="hidden dark:inline">Light Mode</span>
+            </button>
+            <a href="index.html" class="mt-1 w-full px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20">
+                <i class="fas fa-right-from-bracket w-4"></i> Kembali
+            </a>
+        </div>
+    </aside>
+
+    <div id="sidebarOverlay" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden no-print" onclick="toggleSidebar()"></div>
+
+    <!-- HEADER -->
+    <header class="lg:ml-56 bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-30 no-print">
+        <div class="flex items-center justify-between px-3 py-2">
+            <button onclick="toggleSidebar()" class="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                <i class="fas fa-bars text-gray-600 dark:text-gray-300 text-sm"></i>
+            </button>
+            <h2 id="pageTitle" class="font-bold text-gray-800 dark:text-white text-xs sm:text-sm">Form Input Logbook</h2>
+            <button onclick="toggleDarkMode()" class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                <i class="fas fa-moon dark:hidden text-gray-500 text-sm"></i><i class="fas fa-sun hidden dark:inline text-yellow-400 text-sm"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN -->
+    <main class="lg:ml-56 p-2 sm:p-3">
+
+        <!-- ===== PAGE: FORM ===== -->
+        <div id="pageForm">
+            <!-- Stats Bar -->
+            <div class="grid grid-cols-3 gap-2 mb-2">
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-2 shadow text-center">
+                    <p class="text-[10px] text-gray-400 dark:text-gray-500 leading-tight">Session Load</p>
+                    <p id="statSessionLoad" class="text-base font-bold text-primary-600 dark:text-primary-400">0</p>
+                    <span id="statSessionBadge" class="text-[9px] px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 dark:text-gray-300">-</span>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-2 shadow text-center">
+                    <p class="text-[10px] text-gray-400 dark:text-gray-500 leading-tight">Wellness</p>
+                    <p id="statWellness" class="text-base font-bold text-yellow-500 dark:text-yellow-400">0<span class="text-[10px] text-gray-400 dark:text-gray-500">/5</span></p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-2 shadow text-center">
+                    <p class="text-[10px] text-gray-400 dark:text-gray-500 leading-tight">Status</p>
+                    <p id="statStatus" class="text-sm font-bold text-green-500 dark:text-green-400">-</p>
+                </div>
+            </div>
+            <!-- Progress -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg p-2 shadow mb-2">
+                <div class="flex justify-between text-[10px] text-gray-500 dark:text-gray-400 mb-0.5">
+                    <span>Progress</span><span id="progressText">0%</span>
+                </div>
+                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+                    <div id="progressBar" class="bg-primary-500 h-1.5 rounded-full transition-all duration-300" style="width:0%"></div>
+                </div>
+            </div>
+
+            <form id="logbookForm" onsubmit="return false;" class="space-y-2">
+
+                <!-- Bagian 1 -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-3 shadow">
+                    <h3 class="font-bold text-gray-800 dark:text-white mb-2 text-xs flex items-center gap-1.5"><span class="bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300 text-[10px] px-1.5 py-0.5 rounded">1</span> Informasi Umum</h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <div class="col-span-2 sm:col-span-1">
+                            <label class="block text-[10px] font-semibold text-gray-500 dark:text-gray-400 mb-0.5">Nama Atlet *</label>
+                            <select id="f_nama" class="form-input w-full px-2 py-1.5 rounded border dark:border-gray-600 dark:bg-gray-700 dark:text-white text-xs" required onchange="autoGender()">
+                                <option value="">Pilih...</option>
+                                <option value="Nasywa Admafibi Putri Rahmadhani" data-gender="P">Nasywa A. P. Rahmadhani</option>
+                                <option value="Fadzriel Fayyadh Raditya" data-gender="L">Fadzriel F. Raditya</option>
+                                <option value="Daffa Alavan Shaun" data-gender="L">Daffa Alavan Shaun</option>
+                                <option value="Anugrah Putra Hariadi" data-gender="L">Anugrah P. Hariadi</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-semibold text-gray-500 dark:text-gray-400 mb-0.5">Cabor *</label>
+                            <input type="text" id="f_cabor" class="form-input w-full px-2 py-1.5 rounded border dark:border-gray-600 dark:bg-gray-700 dark:text-white text-xs" placeholder="Pickleball" required>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-semibold text-gray-500 dark:text-gray-400 mb-0.5">Tanggal *</label>
+                            <input type="date" id="f_tanggal" class="form-input w-full px-2 py-1.5 rounded border dark:border-gray-600 dark:bg-gray-700 dark:text-white text-xs" required>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-semibold text-gray-500 dark:text-gray-400 mb-0.5">Hari</label>
+                            <input type="text" id="f_hari" class="w-full px-2 py-1.5 rounded border dark:border-gray-600 bg-gray-50 dark:bg-gray-600 dark:text-white text-xs" readonly>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <label class="block text-[10px] font-semibold text-gray-500 mb-1">Sesi Latihan *</label>
+                        <div class="flex gap-1.5">
+                            <label class="flex-1 cursor-pointer"><input type="radio" name="f_sesi" value="Pagi" class="hidden peer"><span class="block text-center py-1.5 rounded border peer-checked:border-primary-500 peer-checked:bg-primary-50 dark:peer-checked:bg-primary-900/30 text-[11px] dark:border-gray-600 dark:text-gray-300">Pagi</span></label>
+                            <label class="flex-1 cursor-pointer"><input type="radio" name="f_sesi" value="Siang" class="hidden peer"><span class="block text-center py-1.5 rounded border peer-checked:border-primary-500 peer-checked:bg-primary-50 dark:peer-checked:bg-primary-900/30 text-[11px] dark:border-gray-600 dark:text-gray-300">Siang</span></label>
+                            <label class="flex-1 cursor-pointer"><input type="radio" name="f_sesi" value="Sore" class="hidden peer"><span class="block text-center py-1.5 rounded border peer-checked:border-primary-500 peer-checked:bg-primary-50 dark:peer-checked:bg-primary-900/30 text-[11px] dark:border-gray-600 dark:text-gray-300">Sore</span></label>
+                            <label class="flex-1 cursor-pointer"><input type="radio" name="f_sesi" value="Malam" class="hidden peer"><span class="block text-center py-1.5 rounded border peer-checked:border-primary-500 peer-checked:bg-primary-50 dark:peer-checked:bg-primary-900/30 text-[11px] dark:border-gray-600 dark:text-gray-300">Malam</span></label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bagian 2 -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-3 shadow">
+                    <h3 class="font-bold text-gray-800 dark:text-white mb-2 text-xs flex items-center gap-1.5"><span class="bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300 text-[10px] px-1.5 py-0.5 rounded">2</span> Kondisi Sebelum Latihan</h3>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[10px] font-semibold text-gray-500 dark:text-gray-400 mb-0.5">Kondisi Tubuh *</label>
+                            <select id="f_kondisiSebelum" class="form-input w-full px-2 py-1.5 rounded border dark:border-gray-600 dark:bg-gray-700 dark:text-white text-xs" required>
+                                <option value="">Pilih...</option>
+                                <option value="Sangat Bugar">Sangat Bugar</option>
+                                <option value="Bugar">Bugar</option>
+                                <option value="Cukup">Cukup</option>
+                                <option value="Kurang Fit">Kurang Fit</option>
+                                <option value="Tidak Fit">Tidak Fit</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-semibold text-gray-500 dark:text-gray-400 mb-0.5">Tidur (jam)</label>
+                            <input type="number" id="f_lamaTidur" min="0" max="24" class="form-input w-full px-2 py-1.5 rounded border dark:border-gray-600 dark:bg-gray-700 dark:text-white text-xs" placeholder="7">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-semibold text-gray-500 dark:text-gray-400 mb-0.5">Kualitas Tidur</label>
+                            <select id="f_kualitasTidur" class="form-input w-full px-2 py-1.5 rounded border dark:border-gray-600 dark:bg-gray-700 dark:text-white text-xs">
+                                <option value="">Pilih...</option>
+                                <option value="Sangat Baik">Sangat Baik</option>
+                                <option value="Baik">Baik</option>
+                                <option value="Cukup">Cukup</option>
+                                <option value="Buruk">Buruk</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-semibold text-gray-500 dark:text-gray-400 mb-0.5">Kelelahan: <span id="valKelelahanSebelum" class="font-bold">5</span></label>
+                            <input type="range" id="f_kelelahanSebelum" min="1" max="10" value="5" class="w-full h-1.5" oninput="updateSlider(this,'valKelelahanSebelum')">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bagian 3 -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-3 shadow">
+                    <h3 class="font-bold text-gray-800 dark:text-white mb-2 text-xs flex items-center gap-1.5"><span class="bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300 text-[10px] px-1.5 py-0.5 rounded">3</span> Pelaksanaan Latihan</h3>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="col-span-2">
+                            <label class="block text-[10px] font-semibold text-gray-500 mb-1">Selesai Sesuai Program? *</label>
+                            <div class="flex gap-1.5">
+                                <label class="flex-1 cursor-pointer"><input type="radio" name="f_selesai" value="Ya" class="hidden peer"><span class="block text-center py-1.5 rounded border peer-checked:border-green-500 peer-checked:bg-green-50 dark:peer-checked:bg-green-900/20 text-[11px] dark:border-gray-600 dark:text-gray-300">Ya</span></label>
+                                <label class="flex-1 cursor-pointer"><input type="radio" name="f_selesai" value="Sebagian" class="hidden peer"><span class="block text-center py-1.5 rounded border peer-checked:border-yellow-500 peer-checked:bg-yellow-50 dark:peer-checked:bg-yellow-900/20 text-[11px] dark:border-gray-600 dark:text-gray-300">Sebagian</span></label>
+                                <label class="flex-1 cursor-pointer"><input type="radio" name="f_selesai" value="Tidak" class="hidden peer"><span class="block text-center py-1.5 rounded border peer-checked:border-red-500 peer-checked:bg-red-50 dark:peer-checked:bg-red-900/20 text-[11px] dark:border-gray-600 dark:text-gray-300">Tidak</span></label>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-semibold text-gray-500 dark:text-gray-400 mb-0.5">Durasi (menit) *</label>
+                            <input type="number" id="f_durasi" min="0" class="form-input w-full px-2 py-1.5 rounded border dark:border-gray-600 dark:bg-gray-700 dark:text-white text-xs" placeholder="90" required>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-semibold text-gray-500 dark:text-gray-400 mb-0.5">RPE: <span id="valRPE" class="font-bold">5</span></label>
+                            <input type="range" id="f_rpe" min="1" max="10" value="5" class="w-full h-1.5" oninput="updateSlider(this,'valRPE');calcSessionLoad()">
+                        </div>
+                        <div class="col-span-2">
+                            <label class="block text-[10px] font-semibold text-gray-500 mb-1">Jenis Latihan</label>
+                            <div class="flex flex-wrap gap-1">
+                                <label class="cursor-pointer"><input type="checkbox" value="Teknik" class="hidden peer jenis-latihan"><span class="block px-2 py-1 rounded border peer-checked:border-primary-500 peer-checked:bg-primary-50 dark:peer-checked:bg-primary-900/30 text-[10px] dark:border-gray-600 dark:text-gray-300">Teknik</span></label>
+                                <label class="cursor-pointer"><input type="checkbox" value="Fisik" class="hidden peer jenis-latihan"><span class="block px-2 py-1 rounded border peer-checked:border-primary-500 peer-checked:bg-primary-50 dark:peer-checked:bg-primary-900/30 text-[10px] dark:border-gray-600 dark:text-gray-300">Fisik</span></label>
+                                <label class="cursor-pointer"><input type="checkbox" value="Taktik" class="hidden peer jenis-latihan"><span class="block px-2 py-1 rounded border peer-checked:border-primary-500 peer-checked:bg-primary-50 dark:peer-checked:bg-primary-900/30 text-[10px] dark:border-gray-600 dark:text-gray-300">Taktik</span></label>
+                                <label class="cursor-pointer"><input type="checkbox" value="Sparring" class="hidden peer jenis-latihan"><span class="block px-2 py-1 rounded border peer-checked:border-primary-500 peer-checked:bg-primary-50 dark:peer-checked:bg-primary-900/30 text-[10px] dark:border-gray-600 dark:text-gray-300">Sparring</span></label>
+                                <label class="cursor-pointer"><input type="checkbox" value="Recovery" class="hidden peer jenis-latihan"><span class="block px-2 py-1 rounded border peer-checked:border-primary-500 peer-checked:bg-primary-50 dark:peer-checked:bg-primary-900/30 text-[10px] dark:border-gray-600 dark:text-gray-300">Recovery</span></label>
+                                <label class="cursor-pointer"><input type="checkbox" value="Lainnya" class="hidden peer jenis-latihan"><span class="block px-2 py-1 rounded border peer-checked:border-primary-500 peer-checked:bg-primary-50 dark:peer-checked:bg-primary-900/30 text-[10px] dark:border-gray-600 dark:text-gray-300">Lainnya</span></label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bagian 4 -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-3 shadow">
+                    <h3 class="font-bold text-gray-800 dark:text-white mb-2 text-xs flex items-center gap-1.5"><span class="bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300 text-[10px] px-1.5 py-0.5 rounded">4</span> Kondisi Setelah Latihan</h3>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[10px] font-semibold text-gray-500 dark:text-gray-400 mb-0.5">Kelelahan: <span id="valKelelahanSetelah" class="font-bold">5</span></label>
+                            <input type="range" id="f_kelelahanSetelah" min="1" max="10" value="5" class="w-full h-1.5" oninput="updateSlider(this,'valKelelahanSetelah')">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-semibold text-gray-500 dark:text-gray-400 mb-0.5">Nyeri Otot</label>
+                            <select id="f_nyeriOtot" class="form-input w-full px-2 py-1.5 rounded border dark:border-gray-600 dark:bg-gray-700 dark:text-white text-xs">
+                                <option value="Tidak Ada">Tidak Ada</option>
+                                <option value="Ringan">Ringan</option>
+                                <option value="Sedang">Sedang</option>
+                                <option value="Berat">Berat</option>
+                            </select>
+                        </div>
+                        <div class="col-span-2">
+                            <label class="block text-[10px] font-semibold text-gray-500 dark:text-gray-400 mb-0.5">Lokasi Nyeri</label>
+                            <textarea id="f_lokasiNyeri" rows="1" class="form-input w-full px-2 py-1.5 rounded border dark:border-gray-600 dark:bg-gray-700 dark:text-white text-xs resize-none" placeholder="Paha kanan, pundak..."></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-semibold text-gray-500 dark:text-gray-400 mb-0.5">Cedera?</label>
+                            <div class="flex gap-1.5">
+                                <label class="flex-1 cursor-pointer"><input type="radio" name="f_cedera" value="Ya" class="hidden peer" onchange="toggleCedera()"><span class="block text-center py-1.5 rounded border peer-checked:border-red-500 peer-checked:bg-red-50 dark:peer-checked:bg-red-900/20 text-[11px] dark:border-gray-600 dark:text-gray-300">Ya</span></label>
+                                <label class="flex-1 cursor-pointer"><input type="radio" name="f_cedera" value="Tidak" class="hidden peer" onchange="toggleCedera()" checked><span class="block text-center py-1.5 rounded border peer-checked:border-green-500 peer-checked:bg-green-50 dark:peer-checked:bg-green-900/20 text-[11px] dark:border-gray-600 dark:text-gray-300">Tidak</span></label>
+                            </div>
+                        </div>
+                        <div id="cederaDetail" class="col-span-2 hidden">
+                            <label class="block text-[10px] font-semibold text-gray-500 dark:text-gray-400 mb-0.5">Detail Cedera</label>
+                            <textarea id="f_cederaDetail" rows="1" class="form-input w-full px-2 py-1.5 rounded border dark:border-gray-600 dark:bg-gray-700 dark:text-white text-xs resize-none" placeholder="Jelaskan cedera..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bagian 5 -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-3 shadow">
+                    <h3 class="font-bold text-gray-800 dark:text-white mb-2 text-xs flex items-center gap-1.5"><span class="bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300 text-[10px] px-1.5 py-0.5 rounded">5</span> Wellness Monitoring</h3>
+                    <div class="grid grid-cols-5 gap-2">
+                        <div class="text-center"><label class="block text-[10px] font-semibold text-gray-500 mb-1">Energi</label><div class="star-rating" data-field="f_energi"></div></div>
+                        <div class="text-center"><label class="block text-[10px] font-semibold text-gray-500 mb-1">Motivasi</label><div class="star-rating" data-field="f_motivasi"></div></div>
+                        <div class="text-center"><label class="block text-[10px] font-semibold text-gray-500 mb-1">Fokus</label><div class="star-rating" data-field="f_fokus"></div></div>
+                        <div class="text-center"><label class="block text-[10px] font-semibold text-gray-500 mb-1">Mood</label><div class="star-rating" data-field="f_mood"></div></div>
+                        <div class="text-center"><label class="block text-[10px] font-semibold text-gray-500 mb-1">Nafsu Makan</label><div class="star-rating" data-field="f_nafsuMakan"></div></div>
+                    </div>
+                </div>
+
+                <!-- Bagian 6 -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-3 shadow">
+                    <h3 class="font-bold text-gray-800 dark:text-white mb-2 text-xs flex items-center gap-1.5"><span class="bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300 text-[10px] px-1.5 py-0.5 rounded">6</span> Catatan Atlet</h3>
+                    <div class="space-y-1.5">
+                        <div><textarea id="f_berjalanBaik" rows="1" class="form-input w-full px-2 py-1.5 rounded border dark:border-gray-600 dark:bg-gray-700 dark:text-white text-xs resize-none" placeholder="Yang berjalan baik hari ini..."></textarea></div>
+                        <div><textarea id="f_kesulitan" rows="1" class="form-input w-full px-2 py-1.5 rounded border dark:border-gray-600 dark:bg-gray-700 dark:text-white text-xs resize-none" placeholder="Kesulitan selama latihan..."></textarea></div>
+                        <div><textarea id="f_target" rows="1" class="form-input w-full px-2 py-1.5 rounded border dark:border-gray-600 dark:bg-gray-700 dark:text-white text-xs resize-none" placeholder="Target latihan berikutnya..."></textarea></div>
+                    </div>
+                </div>
+
+                <!-- Bagian 7 -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-3 shadow">
+                    <h3 class="font-bold text-gray-800 dark:text-white mb-2 text-xs flex items-center gap-1.5"><span class="bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300 text-[10px] px-1.5 py-0.5 rounded">7</span> Khusus Atlet Perempuan</h3>
+                    <div class="flex items-center gap-2 mb-2">
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="f_atletPrm" class="sr-only peer" onchange="toggleGender()">
+                            <div class="w-9 h-5 bg-gray-200 dark:bg-gray-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-pink-500"></div>
+                        </label>
+                        <span class="text-[11px] text-gray-600 dark:text-gray-300">Atlet Perempuan</span>
+                    </div>
+                    <div id="genderFields" class="hidden space-y-2">
+                        <div>
+                            <label class="block text-[10px] font-semibold text-gray-500 dark:text-gray-400 mb-0.5">Menstruasi?</label>
+                            <div class="flex gap-1.5">
+                                <label class="flex-1 cursor-pointer"><input type="radio" name="f_menstruasi" value="Ya" class="hidden peer" onchange="toggleMenstruasi()"><span class="block text-center py-1.5 rounded border peer-checked:border-pink-500 peer-checked:bg-pink-50 dark:peer-checked:bg-pink-900/20 text-[11px] dark:border-gray-600 dark:text-gray-300">Ya</span></label>
+                                <label class="flex-1 cursor-pointer"><input type="radio" name="f_menstruasi" value="Tidak" class="hidden peer" onchange="toggleMenstruasi()" checked><span class="block text-center py-1.5 rounded border peer-checked:border-green-500 peer-checked:bg-green-50 dark:peer-checked:bg-green-900/20 text-[11px] dark:border-gray-600 dark:text-gray-300">Tidak</span></label>
+                            </div>
+                        </div>
+                        <div id="menstruasiFields" class="hidden space-y-2">
+                            <div class="grid grid-cols-2 gap-2">
+                                <div><label class="block text-[10px] font-semibold text-gray-500 dark:text-gray-400 mb-0.5">Hari ke-</label><input type="number" id="f_hariMenstruasi" min="1" max="10" class="form-input w-full px-2 py-1.5 rounded border dark:border-gray-600 dark:bg-gray-700 dark:text-white text-xs"></div>
+                                <div></div>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-semibold text-gray-500 mb-1">Keluhan</label>
+                                <div class="flex flex-wrap gap-1">
+                                    <label class="cursor-pointer"><input type="checkbox" value="Nyeri Perut" class="hidden peer keluhan"><span class="block px-2 py-0.5 rounded border peer-checked:border-pink-500 peer-checked:bg-pink-50 dark:peer-checked:bg-pink-900/20 text-[10px] dark:border-gray-600 dark:text-gray-300">Nyeri Perut</span></label>
+                                    <label class="cursor-pointer"><input type="checkbox" value="Sakit Kepala" class="hidden peer keluhan"><span class="block px-2 py-0.5 rounded border peer-checked:border-pink-500 peer-checked:bg-pink-50 dark:peer-checked:bg-pink-900/20 text-[10px] dark:border-gray-600 dark:text-gray-300">Sakit Kepala</span></label>
+                                    <label class="cursor-pointer"><input type="checkbox" value="Mudah Lelah" class="hidden peer keluhan"><span class="block px-2 py-0.5 rounded border peer-checked:border-pink-500 peer-checked:bg-pink-50 dark:peer-checked:bg-pink-900/20 text-[10px] dark:border-gray-600 dark:text-gray-300">Mudah Lelah</span></label>
+                                    <label class="cursor-pointer"><input type="checkbox" value="Mood Berubah" class="hidden peer keluhan"><span class="block px-2 py-0.5 rounded border peer-checked:border-pink-500 peer-checked:bg-pink-50 dark:peer-checked:bg-pink-900/20 text-[10px] dark:border-gray-600 dark:text-gray-300">Mood</span></label>
+                                    <label class="cursor-pointer"><input type="checkbox" value="Kram" class="hidden peer keluhan"><span class="block px-2 py-0.5 rounded border peer-checked:border-pink-500 peer-checked:bg-pink-50 dark:peer-checked:bg-pink-900/20 text-[10px] dark:border-gray-600 dark:text-gray-300">Kram</span></label>
+                                    <label class="cursor-pointer"><input type="checkbox" value="Tidak Ada" class="hidden peer keluhan"><span class="block px-2 py-0.5 rounded border peer-checked:border-pink-500 peer-checked:bg-pink-50 dark:peer-checked:bg-pink-900/20 text-[10px] dark:border-gray-600 dark:text-gray-300">Tidak Ada</span></label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bagian 8 -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-3 shadow">
+                    <h3 class="font-bold text-gray-800 dark:text-white mb-2 text-xs flex items-center gap-1.5"><span class="bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300 text-[10px] px-1.5 py-0.5 rounded">8</span> Bukti Foto Latihan <span class="text-[9px] text-gray-400 font-normal">(Opsional)</span></h3>
+                    <div class="space-y-2">
+                        <div>
+                            <label class="block text-[10px] font-semibold text-gray-500 dark:text-gray-400 mb-0.5">Upload Foto</label>
+                            <label class="cursor-pointer">
+                                <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-3 text-center hover:border-primary-400 transition">
+                                    <i class="fas fa-cloud-arrow-up text-lg text-gray-400"></i>
+                                    <p class="text-[10px] text-gray-400">Klik atau seret foto (JPG/PNG, maks 5MB)</p>
+                                </div>
+                                <input type="file" id="f_foto" class="hidden" accept="image/*" onchange="previewFoto(event)">
+                            </label>
+                        </div>
+                        <div id="fotoPreview" class="hidden">
+                            <div class="relative inline-block">
+                                <img id="fotoImg" class="w-full max-h-40 object-cover rounded-lg border dark:border-gray-600" alt="Preview">
+                                <button type="button" onclick="removeFoto()" class="absolute top-1 right-1 bg-red-500 text-white w-5 h-5 rounded-full text-[10px] hover:bg-red-600"><i class="fas fa-times"></i></button>
+                            </div>
+                        </div>
+                        <textarea id="f_keteranganFoto" rows="1" class="form-input w-full px-2 py-1.5 rounded border dark:border-gray-600 dark:bg-gray-700 dark:text-white text-xs resize-none" placeholder="Keterangan foto..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Buttons -->
+                <div class="flex gap-2 pb-4">
+                    <button type="button" onclick="saveLogbook()" class="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-bold py-2 rounded-lg text-xs transition active:scale-95"><i class="fas fa-save mr-1"></i>Simpan</button>
+                    <button type="button" onclick="resetForm()" class="px-4 py-2 rounded-lg border-2 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 font-bold text-xs hover:bg-gray-50 dark:hover:bg-gray-700 transition"><i class="fas fa-rotate-left mr-1"></i>Reset</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- ===== PAGE: HISTORY ===== -->
+        <div id="pageHistory" class="hidden">
+            <!-- Summary -->
+            <div class="grid grid-cols-3 gap-2 mb-2">
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-2 shadow text-center">
+                    <i class="fas fa-bolt text-yellow-400 text-sm mb-0.5"></i>
+                    <p class="text-[10px] text-gray-400">Avg Load</p>
+                    <p id="avgLoad" class="text-lg font-bold text-gray-800 dark:text-white">0</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-2 shadow text-center">
+                    <i class="fas fa-star text-yellow-400 text-sm mb-0.5"></i>
+                    <p class="text-[10px] text-gray-400">Avg Wellness</p>
+                    <p id="avgWellness" class="text-lg font-bold text-gray-800 dark:text-white">0</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-2 shadow text-center">
+                    <i class="fas fa-calendar-check text-green-400 text-sm mb-0.5"></i>
+                    <p class="text-[10px] text-gray-400">Total Sesi</p>
+                    <p id="totalSesi" class="text-lg font-bold text-gray-800 dark:text-white">0</p>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-2 shadow">
+                    <h4 class="font-bold text-[11px] text-gray-700 dark:text-gray-200 mb-1"><i class="fas fa-chart-line text-primary-500 mr-1"></i> Session Load & RPE</h4>
+                    <div class="chart-box" style="height:140px"><canvas id="chartLoad"></canvas></div>
+                    <p class="text-[9px] text-gray-400 mt-1"><i class="fas fa-info-circle mr-0.5"></i> Load = Durasi x RPE. Garis putus: 300 (hijau), 600 (merah).</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-2 shadow">
+                    <h4 class="font-bold text-[11px] text-gray-700 dark:text-gray-200 mb-1"><i class="fas fa-star text-yellow-400 mr-1"></i> Wellness Score</h4>
+                    <div class="chart-box" style="height:140px"><canvas id="chartWellness"></canvas></div>
+                    <p class="text-[9px] text-gray-400 mt-1"><i class="fas fa-info-circle mr-0.5"></i> Rata-rata 5 komponen (1-5).</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-2 shadow">
+                    <h4 class="font-bold text-[11px] text-gray-700 dark:text-gray-200 mb-1"><i class="fas fa-person-running text-green-500 mr-1"></i> Kelelahan</h4>
+                    <div class="chart-box" style="height:120px"><canvas id="chartFatigue"></canvas></div>
+                    <p class="text-[9px] text-gray-400 mt-1"><i class="fas fa-info-circle mr-0.5"></i> Hijau=sebelum, Merah=sesudah (1-10).</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-2 shadow">
+                    <h4 class="font-bold text-[11px] text-gray-700 dark:text-gray-200 mb-1"><i class="fas fa-chart-pie text-purple-500 mr-1"></i> Distribusi Sesi</h4>
+                    <div class="chart-box" style="height:120px"><canvas id="chartSesi"></canvas></div>
+                    <p class="text-[9px] text-gray-400 mt-1"><i class="fas fa-info-circle mr-0.5"></i> Pagi/Siang/Sore/Malam.</p>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg p-2 shadow mb-2">
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div><label class="block text-[10px] text-gray-500 dark:text-gray-400 mb-0.5">Dari</label><input type="date" id="filterFrom" class="w-full px-2 py-1 rounded border dark:border-gray-600 dark:bg-gray-700 dark:text-white text-xs" onchange="renderHistory()"></div>
+                    <div><label class="block text-[10px] text-gray-500 dark:text-gray-400 mb-0.5">Sampai</label><input type="date" id="filterTo" class="w-full px-2 py-1 rounded border dark:border-gray-600 dark:bg-gray-700 dark:text-white text-xs" onchange="renderHistory()"></div>
+                    <div><label class="block text-[10px] text-gray-500 dark:text-gray-400 mb-0.5">Cari</label><input type="text" id="filterSearch" class="w-full px-2 py-1 rounded border dark:border-gray-600 dark:bg-gray-700 dark:text-white text-xs" placeholder="Nama/sesi..." oninput="renderHistory()"></div>
+                    <div class="flex items-end gap-1">
+                        <button onclick="exportCSV()" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-1 rounded text-[10px] font-bold transition"><i class="fas fa-file-csv mr-0.5"></i>CSV</button>
+                        <button onclick="window.print()" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-1 rounded text-[10px] font-bold transition"><i class="fas fa-print mr-0.5"></i>Print</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs">
+                        <thead class="bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-[10px]">
+                            <tr>
+                                <th class="px-2 py-2 text-left">Tanggal</th>
+                                <th class="px-2 py-2 text-left">Sesi</th>
+                                <th class="px-2 py-2 text-left">Nama</th>
+                                <th class="px-2 py-2 text-center">Durasi</th>
+                                <th class="px-2 py-2 text-center">RPE</th>
+                                <th class="px-2 py-2 text-center">Load</th>
+                                <th class="px-2 py-2 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyBody" class="divide-y dark:divide-gray-700"></tbody>
+                    </table>
+                </div>
+                <div id="emptyState" class="hidden text-center py-8 text-gray-400">
+                    <i class="fas fa-inbox text-2xl mb-1"></i>
+                    <p class="text-[10px]">Belum ada data logbook</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== PAGE: PREDIKSI LAWAN ===== -->
+        <div id="pagePrediksi" class="hidden">
+            <!-- Form Prediksi -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg p-3 shadow">
+                <h3 class="font-bold text-gray-800 dark:text-white mb-2 text-xs flex items-center gap-1.5"><i class="fas fa-chess text-primary-500"></i> Form Input Prediksi Lawan</h3>
+                <form id="prediksiForm" onsubmit="return false;" class="space-y-2">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[10px] font-semibold text-gray-500 dark:text-gray-400 mb-0.5">Nama Atlet Lawan *</label>
+                            <input type="text" id="pf_nama" class="form-input w-full px-2 py-1.5 rounded border dark:border-gray-600 dark:bg-gray-700 dark:text-white text-xs" placeholder="Nama atlet lawan" required>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-semibold text-gray-500 dark:text-gray-400 mb-0.5">Asal Daerah / Kontingen *</label>
+                            <input type="text" id="pf_daerah" class="form-input w-full px-2 py-1.5 rounded border dark:border-gray-600 dark:bg-gray-700 dark:text-white text-xs" placeholder="Kota / Provinsi" required>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-semibold text-gray-500 dark:text-gray-400 mb-0.5">Analisis Gaya Permainan *</label>
+                        <textarea id="pf_gaya" rows="4" class="form-input w-full px-2 py-1.5 rounded border dark:border-gray-600 dark:bg-gray-700 dark:text-white text-xs resize-none" placeholder="Tuliskan secara detail bagaimana taktik, kebiasaan, kelebihan, dan kelemahan gaya bermain lawan..." required></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-semibold text-gray-500 dark:text-gray-400 mb-0.5">Analisis Mental Atlet Lawan *</label>
+                        <textarea id="pf_mental" rows="4" class="form-input w-full px-2 py-1.5 rounded border dark:border-gray-600 dark:bg-gray-700 dark:text-white text-xs resize-none" placeholder="Tuliskan observasi mengenai ketahanan mental, tingkat emosi, kefokusan, atau kelemahan psikologis lawan saat bertanding..." required></textarea>
+                    </div>
+                    <button type="button" onclick="savePrediksi()" class="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-2 rounded-lg text-xs transition active:scale-95"><i class="fas fa-save mr-1"></i>Simpan Prediksi</button>
+                </form>
+            </div>
+
+            <!-- Daftar Prediksi -->
+            <div class="mt-3">
+                <h3 class="font-bold text-gray-800 dark:text-white mb-2 text-xs flex items-center gap-1.5"><i class="fas fa-list text-gray-500"></i> Daftar Analisis Prediksi Lawan</h3>
+                <div id="prediksiList" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+                <div id="prediksiEmpty" class="hidden text-center py-8 text-gray-400">
+                    <i class="fas fa-inbox text-2xl mb-1"></i>
+                    <p class="text-[10px]">Belum ada data prediksi lawan</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- MODAL DETAIL -->
+    <div id="detailModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-3">
+        <div class="bg-white dark:bg-gray-800 rounded-xl max-w-lg w-full max-h-[85vh] overflow-y-auto p-4">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="font-bold text-sm text-gray-800 dark:text-white">Detail Logbook</h3>
+                <button onclick="closeModal()" class="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"><i class="fas fa-times text-gray-500 text-xs"></i></button>
+            </div>
+            <div id="detailContent" class="space-y-2 text-xs"></div>
+            <div class="mt-3 flex justify-end">
+                <button onclick="closeModal()" class="px-4 py-1.5 bg-primary-600 text-white rounded-lg text-xs font-bold hover:bg-primary-700 transition">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2"></div>
+
+    <script>
+        // ===== FIREBASE CONFIG =====
+        const firebaseConfig = {
+            apiKey: "AIzaSyBxCRCpCn6BcwnWv7KL1dvQOLWTbJVO_0Y",
+            authDomain: "monitoring-koni-kota-surabaya.firebaseapp.com",
+            projectId: "monitoring-koni-kota-surabaya",
+            storageBucket: "monitoring-koni-kota-surabaya.firebasestorage.app",
+            messagingSenderId: "72570551611",
+            appId: "1:72570551611:web:bde360e36c7109aa6acb1e"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // ===== FIREBASE HELPERS =====
+        async function fbAddDoc(collection, data) {
+            try {
+                const docRef = await db.collection(collection).add(data);
+                return docRef.id;
+            } catch (e) {
+                console.error('Error adding document:', e);
+                showToast('Gagal terhubung ke server/database', 'danger');
+                throw e;
+            }
+        }
+
+        async function fbGetDocs(collection, conditions = []) {
+            try {
+                let ref = db.collection(collection);
+                conditions.forEach(c => {
+                    ref = ref.where(c.field, c.operator, c.value);
+                });
+                const snapshot = await ref.get();
+                return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            } catch (e) {
+                console.error('Error getting documents:', e);
+                showToast('Gagal terhubung ke server/database', 'danger');
+                throw e;
+            }
+        }
+
+        async function fbDeleteDoc(collection, id) {
+            try {
+                await db.collection(collection).doc(id).delete();
+            } catch (e) {
+                console.error('Error deleting document:', e);
+                showToast('Gagal terhubung ke server/database', 'danger');
+                throw e;
+            }
+        }
+
+        async function fbUpdateDoc(collection, id, data) {
+            try {
+                await db.collection(collection).doc(id).update(data);
+            } catch (e) {
+                console.error('Error updating document:', e);
+                showToast('Gagal terhubung ke server/database', 'danger');
+                throw e;
+            }
+        }
+
+        const HARI=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+        let entries=[];
+        let isLoading = true;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            initDate();initStarRatings();
+            // Show loading state
+            showLoadingState();
+            // Load data from Firestore
+            await loadEntries();
+            isLoading = false;
+            loadDraft();
+            document.querySelectorAll('.form-input,[name="f_sesi"],[name="f_selesai"]').forEach(el=>{el.addEventListener('change',()=>{autoSave();updateProgress()})});
+            // Auto-fill cabor from URL param
+            const params=new URLSearchParams(window.location.search);
+            const cabor=params.get('cabor');
+            if(cabor){document.getElementById('f_cabor').value=cabor;autoSave()}
+        });
+
+        function showLoadingState() {
+            const tb = document.getElementById('historyBody');
+            if (tb) {
+                tb.innerHTML = '<tr><td colspan="10" class="px-4 py-8 text-center text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i>Memuat data dari server...</td></tr>';
+            }
+        }
+
+        async function loadEntries() {
+            try {
+                entries = await fbGetDocs('logbook_atlet');
+            } catch (e) {
+                entries = [];
+            }
+            renderHistory();
+        }
+
+        function initDate(){const t=new Date();document.getElementById('f_tanggal').value=t.toISOString().split('T')[0];document.getElementById('f_hari').value=HARI[t.getDay()];document.getElementById('f_tanggal').addEventListener('change',function(){const d=new Date(this.value);document.getElementById('f_hari').value=HARI[d.getDay()]})}
+
+        // STAR RATINGS
+        function initStarRatings(){document.querySelectorAll('.star-rating').forEach(c=>{const f=c.dataset.field;c.innerHTML='';for(let i=1;i<=5;i++){const b=document.createElement('button');b.type='button';b.innerHTML='<i class="fas fa-star"></i>';b.className='text-sm text-gray-300 dark:text-gray-600 hover:text-yellow-400 transition cursor-pointer';b.onclick=()=>{c.dataset.value=i;updateStars(c,i);calcWellness();autoSave()};c.appendChild(b)}c.dataset.value=3;updateStars(c,3)})}
+        function updateStars(c,v){c.querySelectorAll('button').forEach((b,i)=>{b.className=i<v?'text-sm text-yellow-400 hover:text-yellow-500 transition cursor-pointer':'text-sm text-gray-300 dark:text-gray-600 hover:text-yellow-400 transition cursor-pointer'})}
+
+        // SLIDER
+        function updateSlider(el,l){const v=parseInt(el.value);document.getElementById(l).textContent=v;let c=v<=3?'#22c55e':v<=6?'#eab308':'#ef4444';el.style.background=`linear-gradient(to right,${c} 0%,${c} ${(v-1)*10}%,#e5e7eb ${(v-1)*10}%,#e5e7eb 100%)`}
+
+        // CALC
+        function calcSessionLoad(){const d=parseInt(document.getElementById('f_durasi').value)||0,r=parseInt(document.getElementById('f_rpe').value)||0,l=d*r;document.getElementById('statSessionLoad').textContent=l;const b=document.getElementById('statSessionBadge');if(!l){b.textContent='-';b.className='text-[9px] px-1.5 py-0.5 rounded-full bg-gray-100'}else if(l<300){b.textContent='Ringan';b.className='text-[9px] px-1.5 py-0.5 rounded-full bg-green-100 text-green-700'}else if(l<=600){b.textContent='Sedang';b.className='text-[9px] px-1.5 py-0.5 rounded-full bg-yellow-100 text-yellow-700'}else{b.textContent='Berat';b.className='text-[9px] px-1.5 py-0.5 rounded-full bg-red-100 text-red-700'}return l}
+        function calcWellness(){let t=0,c=0;document.querySelectorAll('.star-rating').forEach(s=>{t+=parseInt(s.dataset.value)||0;c++});const a=c?(t/c).toFixed(1):0;document.getElementById('statWellness').textContent=a;const st=document.getElementById('statStatus');if(a>=4){st.textContent='Excellent';st.className='text-sm font-bold text-green-500'}else if(a>=3){st.textContent='Good';st.className='text-sm font-bold text-blue-500'}else if(a>=2){st.textContent='Fair';st.className='text-sm font-bold text-yellow-500'}else{st.textContent='Poor';st.className='text-sm font-bold text-red-500'}return parseFloat(a)}
+        function updateProgress(){const r=['f_nama','f_cabor','f_tanggal','f_kondisiSebelum','f_durasi'];let f=0;r.forEach(id=>{if(document.getElementById(id).value.trim())f++});if(document.querySelector('[name="f_sesi"]:checked'))f++;if(document.querySelector('[name="f_selesai"]:checked'))f++;const p=Math.round((f/7)*100);document.getElementById('progressBar').style.width=p+'%';document.getElementById('progressText').textContent=p+'%'}
+
+        // TOGGLES
+        function toggleCedera(){document.getElementById('cederaDetail').classList.toggle('hidden',document.querySelector('[name="f_cedera"]:checked')?.value!=='Ya')}
+        function toggleGender(){document.getElementById('genderFields').classList.toggle('hidden',!document.getElementById('f_atletPrm').checked)}
+        function autoGender(){const s=document.getElementById('f_nama'),g=s.options[s.selectedIndex]?.getAttribute('data-gender');document.getElementById('f_atletPrm').checked=g==='P';toggleGender()}
+        function toggleMenstruasi(){document.getElementById('menstruasiFields').classList.toggle('hidden',document.querySelector('[name="f_menstruasi"]:checked')?.value!=='Ya')}
+
+        // FOTO
+        function previewFoto(e){const f=e.target.files[0];if(!f)return;if(f.size>5*1024*1024){showToast('Maks 5MB!','error');return}const r=new FileReader();r.onload=function(ev){document.getElementById('f_foto').dataset.base64=ev.target.result;document.getElementById('fotoImg').src=ev.target.result;document.getElementById('fotoPreview').classList.remove('hidden')};r.readAsDataURL(f)}
+        function removeFoto(){document.getElementById('f_foto').value='';document.getElementById('f_foto').dataset.base64='';document.getElementById('fotoImg').src='';document.getElementById('fotoPreview').classList.add('hidden')}
+
+        // COLLECT
+        function collectData(){const jl=[...document.querySelectorAll('.jenis-latihan:checked')].map(c=>c.value),kh=[...document.querySelectorAll('.keluhan:checked')].map(c=>c.value);return{id:Date.now(),nama:document.getElementById('f_nama').value.trim(),cabor:document.getElementById('f_cabor').value.trim(),tanggal:document.getElementById('f_tanggal').value,hari:document.getElementById('f_hari').value,sesi:document.querySelector('[name="f_sesi"]:checked')?.value||'',kondisiSebelum:document.getElementById('f_kondisiSebelum').value,lamaTidur:document.getElementById('f_lamaTidur').value,kualitasTidur:document.getElementById('f_kualitasTidur').value,kelelahanSebelum:parseInt(document.getElementById('f_kelelahanSebelum').value),selesaiProgram:document.querySelector('[name="f_selesai"]:checked')?.value||'',durasi:parseInt(document.getElementById('f_durasi').value)||0,rpe:parseInt(document.getElementById('f_rpe').value),jenisLatihan:jl,kelelahanSetelah:parseInt(document.getElementById('f_kelelahanSetelah').value),nyeriOtot:document.getElementById('f_nyeriOtot').value,lokasiNyeri:document.getElementById('f_lokasiNyeri').value.trim(),cedera:document.querySelector('[name="f_cedera"]:checked')?.value||'Tidak',cederaDetail:document.getElementById('f_cederaDetail').value.trim(),energi:parseInt(document.querySelector('[data-field="f_energi"]').dataset.value),motivasi:parseInt(document.querySelector('[data-field="f_motivasi"]').dataset.value),fokus:parseInt(document.querySelector('[data-field="f_fokus"]').dataset.value),mood:parseInt(document.querySelector('[data-field="f_mood"]').dataset.value),nafsuMakan:parseInt(document.querySelector('[data-field="f_nafsuMakan"]').dataset.value),berjalanBaik:document.getElementById('f_berjalanBaik').value.trim(),kesulitan:document.getElementById('f_kesulitan').value.trim(),target:document.getElementById('f_target').value.trim(),atletPrm:document.getElementById('f_atletPrm').checked,menstruasi:document.querySelector('[name="f_menstruasi"]:checked')?.value||'Tidak',hariMenstruasi:document.getElementById('f_hariMenstruasi').value,keluhan:kh,foto:document.getElementById('f_foto').dataset.base64||'',keteranganFoto:document.getElementById('f_keteranganFoto').value.trim(),sessionLoad:calcSessionLoad(),wellnessScore:calcWellness()}}
+
+        // SAVE
+        async function saveLogbook(){const d=collectData();if(!d.nama||!d.cabor||!d.tanggal||!d.sesi||!d.kondisiSebelum||!d.durasi){showToast('Gagal: Harap lengkapi semua field wajib!','error');return}try{const docId=await fbAddDoc('logbook_atlet',d);d.id=docId;entries.push(d);sessionStorage.removeItem('logbookDraft');showToast('Data Logbook berhasil disimpan!','success');resetForm();renderHistory()}catch(e){showToast('Gagal menyimpan data!','error')}}
+
+        // AUTO SAVE
+        function autoSave(){sessionStorage.setItem('logbookDraft',JSON.stringify(collectData()))}
+        function loadDraft(){const d=JSON.parse(sessionStorage.getItem('logbookDraft')||'null');if(!d)return;if(d.nama){const s=document.getElementById('f_nama');for(let i=0;i<s.options.length;i++){if(s.options[i].value===d.nama){s.selectedIndex=i;break}}autoGender()}if(d.cabor)document.getElementById('f_cabor').value=d.cabor;if(d.tanggal)document.getElementById('f_tanggal').value=d.tanggal;if(d.hari)document.getElementById('f_hari').value=d.hari;if(d.sesi){const r=document.querySelector(`[name="f_sesi"][value="${d.sesi}"]`);if(r)r.checked=true}if(d.kondisiSebelum)document.getElementById('f_kondisiSebelum').value=d.kondisiSebelum;if(d.lamaTidur)document.getElementById('f_lamaTidur').value=d.lamaTidur;if(d.kualitasTidur)document.getElementById('f_kualitasTidur').value=d.kualitasTidur;if(d.kelelahanSebelum){document.getElementById('f_kelelahanSebelum').value=d.kelelahanSebelum;updateSlider(document.getElementById('f_kelelahanSebelum'),'valKelelahanSebelum')}if(d.selesaiProgram){const r=document.querySelector(`[name="f_selesai"][value="${d.selesaiProgram}"]`);if(r)r.checked=true}if(d.durasi)document.getElementById('f_durasi').value=d.durasi;if(d.rpe){document.getElementById('f_rpe').value=d.rpe;updateSlider(document.getElementById('f_rpe'),'valRPE')}if(d.jenisLatihan)d.jenisLatihan.forEach(v=>{const c=document.querySelector(`.jenis-latihan[value="${v}"]`);if(c)c.checked=true});if(d.kelelahanSetelah){document.getElementById('f_kelelahanSetelah').value=d.kelelahanSetelah;updateSlider(document.getElementById('f_kelelahanSetelah'),'valKelelahanSetelah')}if(d.nyeriOtot)document.getElementById('f_nyeriOtot').value=d.nyeriOtot;if(d.lokasiNyeri)document.getElementById('f_lokasiNyeri').value=d.lokasiNyeri;if(d.cedera){const r=document.querySelector(`[name="f_cedera"][value="${d.cedera}"]`);if(r)r.checked=true;toggleCedera()}if(d.cederaDetail)document.getElementById('f_cederaDetail').value=d.cederaDetail;['energi','motivasi','fokus','mood','nafsuMakan'].forEach(k=>{if(d[k]){const c=document.querySelector(`[data-field="f_${k}"]`);c.dataset.value=d[k];updateStars(c,d[k])}});if(d.berjalanBaik)document.getElementById('f_berjalanBaik').value=d.berjalanBaik;if(d.kesulitan)document.getElementById('f_kesulitan').value=d.kesulitan;if(d.target)document.getElementById('f_target').value=d.target;if(d.atletPrm){document.getElementById('f_atletPrm').checked=true;toggleGender()}if(d.menstruasi){const r=document.querySelector(`[name="f_menstruasi"][value="${d.menstruasi}"]`);if(r)r.checked=true;toggleMenstruasi()}if(d.hariMenstruasi)document.getElementById('f_hariMenstruasi').value=d.hariMenstruasi;if(d.keluhan)d.keluhan.forEach(v=>{const c=document.querySelector(`.keluhan[value="${v}"]`);if(c)c.checked=true});if(d.foto){document.getElementById('f_foto').dataset.base64=d.foto;document.getElementById('fotoImg').src=d.foto;document.getElementById('fotoPreview').classList.remove('hidden')}if(d.keteranganFoto)document.getElementById('f_keteranganFoto').value=d.keteranganFoto;calcSessionLoad();calcWellness();updateProgress()}
+
+        function resetForm(){document.getElementById('logbookForm').reset();document.querySelectorAll('.jenis-latihan:checked,.keluhan:checked').forEach(c=>c.checked=false);document.querySelectorAll('[name="f_sesi"]:checked,[name="f_selesai"]:checked,[name="f_cedera"]:checked,[name="f_menstruasi"]:checked').forEach(r=>r.checked=false);document.getElementById('cederaDetail').classList.add('hidden');document.getElementById('menstruasiFields').classList.add('hidden');document.getElementById('f_atletPrm').checked=false;document.getElementById('genderFields').classList.add('hidden');autoGender();document.querySelectorAll('.star-rating').forEach(c=>{c.dataset.value=3;updateStars(c,3)});document.getElementById('f_kelelahanSebelum').value=5;updateSlider(document.getElementById('f_kelelahanSebelum'),'valKelelahanSebelum');document.getElementById('f_kelelahanSetelah').value=5;updateSlider(document.getElementById('f_kelelahanSetelah'),'valKelelahanSetelah');document.getElementById('f_rpe').value=5;updateSlider(document.getElementById('f_rpe'),'valRPE');initDate();calcSessionLoad();calcWellness();updateProgress();removeFoto()}
+
+        // NAV
+        function showPage(p){document.getElementById('pageForm').classList.toggle('hidden',p!=='form');document.getElementById('pageHistory').classList.toggle('hidden',p!=='history');document.getElementById('pagePrediksi').classList.toggle('hidden',p!=='prediksi');const titles={form:'Form Input Logbook',history:'Riwayat & Laporan',prediksi:'Prediksi Lawan'};document.getElementById('pageTitle').textContent=titles[p]||'';['navForm','navHistory','navPrediksi'].forEach(id=>{const btn=document.getElementById(id);const key=id.replace('nav','').toLowerCase();btn.className=p===key?'nav-btn w-full text-left px-3 py-2 rounded-lg mb-1 font-medium text-xs flex items-center gap-2 bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300':'nav-btn w-full text-left px-3 py-2 rounded-lg mb-1 font-medium text-xs flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'});if(p==='history')renderHistory();if(p==='prediksi')renderPrediksi();toggleSidebar(false)}
+
+        // HISTORY
+        function getFiltered(){let d=[...entries];const f=document.getElementById('filterFrom').value,t=document.getElementById('filterTo').value,q=document.getElementById('filterSearch').value.toLowerCase();if(f)d=d.filter(e=>e.tanggal>=f);if(t)d=d.filter(e=>e.tanggal<=t);if(q)d=d.filter(e=>e.nama.toLowerCase().includes(q)||e.sesi.toLowerCase().includes(q));return d.sort((a,b)=>(b.tanggal||'').localeCompare(a.tanggal||''))}
+        function renderHistory(){const data=getFiltered(),tb=document.getElementById('historyBody'),em=document.getElementById('emptyState');if(entries.length){document.getElementById('avgLoad').textContent=(entries.reduce((s,e)=>s+e.sessionLoad,0)/entries.length).toFixed(0);document.getElementById('avgWellness').textContent=(entries.reduce((s,e)=>s+e.wellnessScore,0)/entries.length).toFixed(1);document.getElementById('totalSesi').textContent=entries.length}if(!data.length){tb.innerHTML='';em.classList.remove('hidden');renderCharts(data);return}em.classList.add('hidden');tb.innerHTML=data.map(d=>{const lc=d.sessionLoad<300?'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400':d.sessionLoad<=600?'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400':'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';return`<tr class="border-t dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50"><td class="px-2 py-1.5 whitespace-nowrap dark:text-gray-200">${d.tanggal}</td><td class="px-2 py-1.5 dark:text-gray-200">${d.sesi}</td><td class="px-2 py-1.5 font-medium dark:text-gray-200">${d.nama}</td><td class="px-2 py-1.5 text-center dark:text-gray-200">${d.durasi}m</td><td class="px-2 py-1.5 text-center font-bold dark:text-gray-200">${d.rpe}</td><td class="px-2 py-1.5 text-center"><span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${lc}">${d.sessionLoad}</span></td><td class="px-2 py-1.5 text-center flex items-center justify-center gap-1"><button onclick="showDetail('${d.id}')" class="text-primary-500 hover:text-primary-700"><i class="fas fa-eye text-xs"></i></button><button onclick="deleteEntry('${d.id}')" class="text-red-500 hover:text-red-700"><i class="fas fa-trash text-xs"></i></button></td></tr>`}).join('');renderCharts(data)}
+
+        // CHARTS
+        let chartInstances={};function destroyCharts(){Object.values(chartInstances).forEach(c=>c.destroy());chartInstances={}}
+        function renderCharts(data){destroyCharts();if(!data.length)return;const s=[...data].sort((a,b)=>a.tanggal.localeCompare(b.tanggal)),lb=s.map(d=>d.tanggal.slice(5)),dk=document.documentElement.classList.contains('dark'),tc=dk?'#9ca3af':'#6b7280',gc=dk?'#374151':'#e5e7eb';
+            chartInstances.load=new Chart(document.getElementById('chartLoad'),{type:'line',data:{labels:lb,datasets:[{label:'Load',data:s.map(d=>d.sessionLoad),borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.08)',fill:true,tension:.3,pointRadius:3,borderWidth:2},{label:'RPE',data:s.map(d=>d.rpe),borderColor:'#f59e0b',fill:false,tension:.3,pointRadius:3,borderWidth:2,yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{color:tc,font:{size:9},boxWidth:12,padding:6}}},scales:{x:{ticks:{color:tc,font:{size:8},maxRotation:0},grid:{color:gc}},y:{position:'left',title:{display:true,text:'Load',color:tc,font:{size:8}},ticks:{color:tc,font:{size:8}},grid:{color:gc}},y1:{position:'right',title:{display:true,text:'RPE',color:tc,font:{size:8}},min:0,max:10,ticks:{color:tc,font:{size:8}},grid:{drawOnChartArea:false}}}}});
+            chartInstances.wellness=new Chart(document.getElementById('chartWellness'),{type:'line',data:{labels:lb,datasets:[{label:'Wellness',data:s.map(d=>d.wellnessScore),borderColor:'#eab308',backgroundColor:'rgba(234,179,8,.12)',fill:true,tension:.4,pointRadius:3,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{color:tc,font:{size:9},boxWidth:12,padding:6}}},scales:{x:{ticks:{color:tc,font:{size:8},maxRotation:0},grid:{color:gc}},y:{min:0,max:5,ticks:{color:tc,font:{size:8},stepSize:1},grid:{color:gc}}}}});
+            chartInstances.fatigue=new Chart(document.getElementById('chartFatigue'),{type:'bar',data:{labels:lb,datasets:[{label:'Sebelum',data:s.map(d=>d.kelelahanSebelum),backgroundColor:'rgba(34,197,94,.7)',borderRadius:3,barPercentage:.8},{label:'Sesudah',data:s.map(d=>d.kelelahanSetelah),backgroundColor:'rgba(239,68,68,.7)',borderRadius:3,barPercentage:.8}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{color:tc,font:{size:9},boxWidth:10,padding:4}}},scales:{x:{ticks:{color:tc,font:{size:8},maxRotation:0},grid:{color:gc}},y:{min:0,max:10,ticks:{color:tc,font:{size:8},stepSize:2},grid:{color:gc}}}}});
+            const sc={Pagi:0,Siang:0,Sore:0,Malam:0};s.forEach(d=>{if(sc[d.sesi]!==undefined)sc[d.sesi]++});chartInstances.sesi=new Chart(document.getElementById('chartSesi'),{type:'doughnut',data:{labels:Object.keys(sc),datasets:[{data:Object.values(sc),backgroundColor:['#fbbf24','#f97316','#3b82f6','#6366f1'],borderWidth:2,borderColor:dk?'#1f2937':'#fff',hoverOffset:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:tc,font:{size:9},boxWidth:10,padding:6}}}}})}
+
+        // DETAIL
+        function showDetail(id){const d=entries.find(e=>e.id===id);if(!d)return;const lc=d.sessionLoad<300?'text-green-500':d.sessionLoad<=600?'text-yellow-500':'text-red-500',st=n=>'★'.repeat(n)+'☆'.repeat(5-n);document.getElementById('detailContent').innerHTML=`<div class="grid grid-cols-2 gap-2"><div class="col-span-2 bg-gray-50 dark:bg-gray-700 rounded-lg p-2"><h4 class="font-bold text-primary-600 dark:text-primary-300 text-[11px]"><i class="fas fa-user mr-1"></i>Informasi Umum</h4></div><div><span class="text-gray-400 text-[10px]">Nama</span><p class="font-medium dark:text-white">${d.nama}</p></div><div><span class="text-gray-400 text-[10px]">Cabor</span><p class="font-medium dark:text-white">${d.cabor}</p></div><div><span class="text-gray-400 text-[10px]">Tanggal</span><p class="font-medium dark:text-white">${d.tanggal} (${d.hari})</p></div><div><span class="text-gray-400 text-[10px]">Sesi</span><p class="font-medium dark:text-white">${d.sesi}</p></div><div class="col-span-2 bg-gray-50 dark:bg-gray-700 rounded-lg p-2 mt-1"><h4 class="font-bold text-primary-600 dark:text-primary-300 text-[11px]"><i class="fas fa-heartbeat mr-1"></i>Sebelum</h4></div><div><span class="text-gray-400 text-[10px]">Kondisi</span><p class="font-medium dark:text-white">${d.kondisiSebelum}</p></div><div><span class="text-gray-400 text-[10px]">Tidur</span><p class="font-medium dark:text-white">${d.lamaTidur||'-'}j (${d.kualitasTidur||'-'})</p></div><div><span class="text-gray-400 text-[10px]">Kelelahan</span><p class="font-bold ${d.kelelahanSebelum<=3?'text-green-500':d.kelelahanSebelum<=6?'text-yellow-500':'text-red-500'}">${d.kelelahanSebelum}/10</p></div><div class="col-span-2 bg-gray-50 dark:bg-gray-700 rounded-lg p-2 mt-1"><h4 class="font-bold text-primary-600 dark:text-primary-300 text-[11px]"><i class="fas fa-dumbbell mr-1"></i>Latihan</h4></div><div><span class="text-gray-400 text-[10px]">Program</span><p class="font-medium dark:text-white">${d.selesaiProgram}</p></div><div><span class="text-gray-400 text-[10px]">Durasi</span><p class="font-medium dark:text-white">${d.durasi}m</p></div><div><span class="text-gray-400 text-[10px]">RPE</span><p class="font-bold dark:text-white">${d.rpe}/10</p></div><div><span class="text-gray-400 text-[10px]">Load</span><p class="font-bold ${lc}">${d.sessionLoad}</p></div><div class="sm:col-span-2"><span class="text-gray-400 text-[10px]">Jenis</span><p class="font-medium dark:text-white">${d.jenisLatihan.join(', ')||'-'}</p></div><div class="col-span-2 bg-gray-50 dark:bg-gray-700 rounded-lg p-2 mt-1"><h4 class="font-bold text-primary-600 dark:text-primary-300 text-[11px]"><i class="fas fa-bed mr-1"></i>Setelah</h4></div><div><span class="text-gray-400 text-[10px]">Kelelahan</span><p class="font-bold ${d.kelelahanSetelah<=3?'text-green-500':d.kelelahanSetelah<=6?'text-yellow-500':'text-red-500'}">${d.kelelahanSetelah}/10</p></div><div><span class="text-gray-400 text-[10px]">Nyeri</span><p class="font-medium dark:text-white">${d.nyeriOtot}</p></div><div class="sm:col-span-2"><span class="text-gray-400 text-[10px]">Lokasi</span><p class="font-medium dark:text-white">${d.lokasiNyeri||'-'}</p></div><div><span class="text-gray-400 text-[10px]">Cedera</span><p class="font-medium ${d.cedera==='Ya'?'text-red-500':'text-green-500'}">${d.cedera}</p></div>${d.cedera==='Ya'?`<div class="sm:col-span-2"><span class="text-gray-400 text-[10px]">Detail</span><p class="font-medium dark:text-white">${d.cederaDetail}</p></div>`:''}<div class="col-span-2 bg-gray-50 dark:bg-gray-700 rounded-lg p-2 mt-1"><h4 class="font-bold text-primary-600 dark:text-primary-300 text-[11px]"><i class="fas fa-star mr-1"></i>Wellness</h4></div><div><span class="text-gray-400 text-[10px]">Energi</span><p class="text-yellow-400 text-[11px]">${st(d.energi)}</p></div><div><span class="text-gray-400 text-[10px]">Motivasi</span><p class="text-yellow-400 text-[11px]">${st(d.motivasi)}</p></div><div><span class="text-gray-400 text-[10px]">Fokus</span><p class="text-yellow-400 text-[11px]">${st(d.fokus)}</p></div><div><span class="text-gray-400 text-[10px]">Mood</span><p class="text-yellow-400 text-[11px]">${st(d.mood)}</p></div><div><span class="text-gray-400 text-[10px]">Makan</span><p class="text-yellow-400 text-[11px]">${st(d.nafsuMakan)}</p></div><div><span class="text-gray-400 text-[10px]">Score</span><p class="font-bold text-yellow-500">${d.wellnessScore}/5</p></div><div class="col-span-2 bg-gray-50 dark:bg-gray-700 rounded-lg p-2 mt-1"><h4 class="font-bold text-primary-600 dark:text-primary-300 text-[11px]"><i class="fas fa-pen mr-1"></i>Catatan</h4></div><div class="sm:col-span-2"><span class="text-gray-400 text-[10px]">Positif</span><p class="font-medium dark:text-white">${d.berjalanBaik||'-'}</p></div><div class="sm:col-span-2"><span class="text-gray-400 text-[10px]">Kesulitan</span><p class="font-medium dark:text-white">${d.kesulitan||'-'}</p></div><div class="sm:col-span-2"><span class="text-gray-400 text-[10px]">Target</span><p class="font-medium dark:text-white">${d.target||'-'}</p></div>${d.atletPrm?`<div class="col-span-2 bg-gray-50 dark:bg-gray-700 rounded-lg p-2 mt-1"><h4 class="font-bold text-pink-500 text-[11px]"><i class="fas fa-venus mr-1"></i>Perempuan</h4></div><div><span class="text-gray-400 text-[10px]">Menstruasi</span><p class="font-medium dark:text-white">${d.menstruasi}</p></div>${d.menstruasi==='Ya'?`<div><span class="text-gray-400 text-[10px]">Hari ke-</span><p class="font-medium dark:text-white">${d.hariMenstruasi}</p></div><div class="sm:col-span-2"><span class="text-gray-400 text-[10px]">Keluhan</span><p class="font-medium dark:text-white">${d.keluhan.join(', ')||'-'}</p></div>`:''}`:''}${d.foto?`<div class="col-span-2 bg-gray-50 dark:bg-gray-700 rounded-lg p-2 mt-1"><h4 class="font-bold text-primary-600 dark:text-primary-300 text-[11px]"><i class="fas fa-camera mr-1"></i>Foto</h4></div><div class="sm:col-span-2"><img src="${d.foto}" class="w-full max-h-40 object-cover rounded-lg border dark:border-gray-600"></div>${d.keteranganFoto?`<div class="sm:col-span-2"><span class="text-gray-400 text-[10px]">Keterangan</span><p class="font-medium dark:text-white">${d.keteranganFoto}</p></div>`:''}`:''}</div>`;document.getElementById('detailModal').classList.remove('hidden')}
+        async function deleteEntry(id){if(!confirm('Apakah Anda yakin ingin menghapus data ini?'))return;try{await fbDeleteDoc('logbook_atlet',id);entries=entries.filter(e=>e.id!==id);renderHistory();showToast('Data berhasil dihapus!','danger')}catch(e){showToast('Gagal menghapus data!','error')}}
+        function closeModal(){document.getElementById('detailModal').classList.add('hidden')}
+        document.getElementById('detailModal').addEventListener('click',e=>{if(e.target.id==='detailModal')closeModal()});
+
+        // EXPORT
+        function exportCSV(){const d=getFiltered();if(!d.length){showToast('Tidak ada data','error');return}const hd=['Tanggal','Hari','Sesi','Nama','Cabor','Durasi','RPE','Load','Kondisi','Kelelahan Seb','Kelelahan Set','Nyeri','Cedera','Wellness'],rw=d.map(e=>[e.tanggal,e.hari,e.sesi,e.nama,e.cabor,e.durasi,e.rpe,e.sessionLoad,e.kondisiSebelum,e.kelelahanSebelum,e.kelelahanSetelah,e.nyeriOtot,e.cedera,e.wellnessScore]);let csv='\uFEFF'+hd.join(',')+'\n'+rw.map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');const b=new Blob([csv],{type:'text/csv;charset=utf-8;'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`logbook_${new Date().toISOString().split('T')[0]}.csv`;a.click();showToast('CSV didownload!','success')}
+
+        // PREDIKSI LAWAN
+        let dataPrediksi=[];
+        async function loadPrediksi(){try{return await fbGetDocs('prediksi_lawan')}catch(e){return[]}}
+        async function savePrediksiToDB(d){try{const docId=await fbAddDoc('prediksi_lawan',d);d.id=docId;d.firestoreId=docId;return docId}catch(e){showToast('Gagal menyimpan data!','error');throw e}}
+        function getPembuat(){const sel=document.getElementById('f_nama');return sel&&sel.value?sel.value:'Atlet'}
+        async function savePrediksi(){
+            const nama=document.getElementById('pf_nama').value.trim();
+            const daerah=document.getElementById('pf_daerah').value.trim();
+            const gaya=document.getElementById('pf_gaya').value.trim();
+            const mental=document.getElementById('pf_mental').value.trim();
+            if(!nama||!daerah||!gaya||!mental){showToast('Semua field wajib diisi!','error');return}
+            const prediksi={nama,daerah,gaya,mental,tanggal:new Date().toISOString().split('T')[0],role:'Atlet',pembuat:getPembuat()};
+            try{
+                await savePrediksiToDB(prediksi);
+                document.getElementById('prediksiForm').reset();
+                showToast('Prediksi berhasil disimpan!','success');
+                renderPrediksi();
+            }catch(e){}
+        }
+        async function renderPrediksi(){
+            const list=document.getElementById('prediksiList'),em=document.getElementById('prediksiEmpty');
+            dataPrediksi=await loadPrediksi();
+            const filtered=dataPrediksi.filter(d=>d.role==='Atlet').sort((a,b)=>b.id-a.id);
+            if(!filtered.length){list.innerHTML='';em.classList.remove('hidden');return}
+            em.classList.add('hidden');
+            list.innerHTML=filtered.map(d=>`<div class="bg-white dark:bg-gray-800 rounded-lg p-3 shadow">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <h4 class="font-bold text-xs text-gray-800 dark:text-white">${d.nama}</h4>
+                        <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">${d.daerah}</span>
+                        ${d.pembuat?`<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400"><i class="fas fa-user mr-0.5"></i>${d.pembuat}</span>`:''}
+                    </div>
+                    <span class="text-[9px] text-gray-400">${d.tanggal}</span>
+                </div>
+                <div class="mb-1.5">
+                    <p class="text-[10px] font-semibold text-gray-500 dark:text-gray-400 mb-0.5"><i class="fas fa-chess-board mr-1"></i>Gaya Permainan</p>
+                    <p class="text-[11px] text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">${d.gaya}</p>
+                </div>
+                <div class="mb-2">
+                    <p class="text-[10px] font-semibold text-gray-500 dark:text-gray-400 mb-0.5"><i class="fas fa-brain mr-1"></i>Kondisi Mental</p>
+                    <p class="text-[11px] text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">${d.mental}</p>
+                </div>
+                <div class="flex justify-end">
+                    <button onclick="deletePrediksi('${d.id}')" class="text-red-500 hover:text-red-700 text-[10px] font-medium flex items-center gap-1"><i class="fas fa-trash"></i> Hapus</button>
+                </div>
+            </div>`).join('');
+        }
+        async function deletePrediksi(id){if(!confirm('Apakah Anda yakin ingin menghapus prediksi ini?'))return;try{await fbDeleteDoc('prediksi_lawan',id);renderPrediksi();showToast('Prediksi berhasil dihapus!','danger')}catch(e){showToast('Gagal menghapus data!','error')}}
+
+        // SIDEBAR
+        function toggleSidebar(show){const s=document.getElementById('sidebar'),o=document.getElementById('sidebarOverlay');if(show===undefined)show=!s.classList.contains('translate-x-0');if(show){s.classList.remove('-translate-x-full');s.classList.add('translate-x-0');o.classList.remove('hidden')}else{s.classList.remove('translate-x-0');s.classList.add('-translate-x-full');o.classList.add('hidden')}}
+        function toggleDarkMode(){document.documentElement.classList.toggle('dark');sessionStorage.setItem('darkMode',document.documentElement.classList.contains('dark'))}
+        if(sessionStorage.getItem('darkMode')==='true')document.documentElement.classList.add('dark');
+
+        // TOAST
+        function showToast(m,t){const c=document.getElementById('toastContainer'),s=document.createElement('div');const bg=t==='success'?'bg-green-500':t==='danger'?'bg-red-500':'bg-red-500';const ic=t==='success'?'fa-check-circle':t==='danger'?'fa-trash-can':'fa-exclamation-circle';s.className=`toast ${bg} text-white px-4 py-2.5 rounded-lg shadow-lg text-[11px] font-medium flex items-center gap-2 max-w-xs`;s.innerHTML=`<i class="fas ${ic}"></i><span>${m}</span>`;c.appendChild(s);setTimeout(()=>s.remove(),3000)}
+    </script>
+</body>
+</html>
