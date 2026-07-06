@@ -93,7 +93,7 @@
     <div id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
     <!-- HEADER -->
-    <header class="main-header bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-30 no-print">
+    <header class="main-header bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-[60] no-print">
         <div class="flex items-center justify-between px-3 py-2">
             <button id="hamburgerBtn" onclick="toggleSidebar()" class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
                 <i class="fas fa-bars text-gray-600 dark:text-gray-300 text-sm"></i>
@@ -489,6 +489,13 @@
         function toggleDarkMode(){document.documentElement.classList.toggle('dark');document.body.classList.toggle('dark');sessionStorage.setItem('darkMode',document.documentElement.classList.contains('dark'))}
         if(sessionStorage.getItem('darkMode')==='true'){document.documentElement.classList.add('dark');document.body.classList.add('dark')}
         function showToast(m,t){var c=document.getElementById('toastContainer');var s=document.createElement('div');var bg=t==='success'?'bg-green-500':t==='danger'?'bg-red-500':'bg-red-500';var ic=t==='success'?'fa-check-circle':t==='danger'?'fa-trash-can':'fa-exclamation-circle';s.className='toast '+bg+' text-white px-4 py-2.5 rounded-lg shadow-lg text-[11px] font-medium flex items-center gap-2 max-w-xs';s.innerHTML='<i class="fas '+ic+'"></i><span>'+m+'</span>';c.appendChild(s);setTimeout(function(){s.remove()},3000)}
+
+        // ===== BIND EVENTS (addEventListener backup for mobile) =====
+        document.addEventListener('DOMContentLoaded',function(){
+            var hb=document.getElementById('hamburgerBtn');if(hb)hb.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();toggleSidebar()});
+            var ov=document.getElementById('sidebarOverlay');if(ov)ov.addEventListener('click',function(e){e.preventDefault();toggleSidebar()});
+            document.querySelectorAll('#sidebar .nav-btn').forEach(function(btn){btn.addEventListener('click',function(){closeSidebar()})});
+        });
 
         // ===== FIREBASE CONFIG =====
         const firebaseConfig={apiKey:"AIzaSyBxCRCpCn6BcwnWv7KL1dvQOLWTbJVO_0Y",authDomain:"monitoring-koni-kota-surabaya.firebaseapp.com",projectId:"monitoring-koni-kota-surabaya",storageBucket:"monitoring-koni-kota-surabaya.firebasestorage.app",messagingSenderId:"72570551611",appId:"1:72570551611:web:bde360e36c7109aa6acb1e"};
