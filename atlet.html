@@ -89,12 +89,12 @@
         </div>
     </aside>
 
-    <div id="sidebarOverlay" onclick="toggleSidebar()"></div>
+    <div id="sidebarOverlay"></div>
 
     <!-- HEADER -->
     <header class="main-header bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-[60] no-print">
         <div class="flex items-center justify-between px-3 py-2">
-            <button id="hamburgerBtn" onclick="toggleSidebar()" class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+            <button id="hamburgerBtn" class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
                 <i class="fas fa-bars text-gray-600 dark:text-gray-300 text-sm"></i>
             </button>
             <h2 id="pageTitle" class="font-bold text-gray-800 dark:text-white text-xs sm:text-sm">Form Input Logbook</h2>
@@ -516,7 +516,7 @@
 
     <script>
         // ===== AUTO CACHE BUST =====
-        (function(){var v='20260706-3';var s=localStorage.getItem('appVersion');if(s&&s!==v){localStorage.removeItem('appVersion');location.reload(true)}else{localStorage.setItem('appVersion',v)}})();
+        (function(){var v='20260706-4';var s=localStorage.getItem('appVersion');if(s&&s!==v){localStorage.removeItem('appVersion');location.reload(true)}else{localStorage.setItem('appVersion',v)}})();
 
         // ===== SIDEBAR / DARK MODE / TOAST (always work) =====
         function toggleSidebar(){var s=document.getElementById('sidebar');var o=document.getElementById('sidebarOverlay');if(s.classList.contains('open')){s.classList.remove('open');o.classList.remove('show')}else{s.classList.add('open');o.classList.add('show')}}
