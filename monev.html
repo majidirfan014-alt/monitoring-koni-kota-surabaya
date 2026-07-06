@@ -495,7 +495,7 @@
             if(remaining<=0){showToast('Maksimal 5 foto!','error');return}
             files.slice(0,remaining).forEach(file=>{
                 if(file.size>2*1024*1024){showToast('File '+file.name+' melebihi 2MB!','error');return}
-                compressImage(file,800,0.7).then(base64=>{uploadedFotos.push({name:file.name,data:base64});renderFotoPreview()});
+                compressImage(file,200,0.3).then(base64=>{uploadedFotos.push({name:file.name,data:base64});renderFotoPreview()});
             });
             e.target.value='';
         }
