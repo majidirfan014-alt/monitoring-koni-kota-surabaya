@@ -555,7 +555,7 @@
         }
 
         // FILTER MONEV
-        function getFiltered(){let d=[...dataMonev];const f=document.getElementById('filterFrom').value,t=document.getElementById('filterTo').value,q=document.getElementById('filterSearch').value.toLowerCase();if(f)d=d.filter(e=>e.tanggal>=f);if(t)d=d.filter(e=>e.tanggal<=t);if(q)d=d.filter(e=>(e.namaTim||"""").toLowerCase().includes(q)||(e.lokasi||"""").toLowerCase().includes(q)||(e.cabor||"""").toLowerCase().includes(q));return d.sort((a,b)=>(b.tanggal||'').localeCompare(a.tanggal||''))}
+        function getFiltered(){let d=[...dataMonev];const f=document.getElementById('filterFrom').value,t=document.getElementById('filterTo').value,q=document.getElementById('filterSearch').value.toLowerCase();if(f)d=d.filter(e=>e.tanggal>=f);if(t)d=d.filter(e=>e.tanggal<=t);if(q)d=d.filter(e=>(e.namaTim||'').toLowerCase().includes(q)||(e.lokasi||'').toLowerCase().includes(q)||(e.cabor||'').toLowerCase().includes(q));return d.sort((a,b)=>(b.tanggal||'').localeCompare(a.tanggal||''))}
 
         // RENDER HISTORY
         let chartInstances={};function destroyCharts(){Object.values(chartInstances).forEach(c=>c.destroy());chartInstances={}}
@@ -711,7 +711,7 @@
             });
             const result=[];
             for(const name in groups){
-                const g=groups[name].entries.sort((a,b)=>(b.tanggal||"""").localeCompare(a.tanggal||""""));
+                const g=groups[name].entries.sort((a,b)=>(b.tanggal||'').localeCompare(a.tanggal||''));
                 const avgRPE=(g.reduce((s,e)=>s+(e.rpe||0),0)/g.length).toFixed(1);
                 const avgLoad=(g.reduce((s,e)=>s+(e.sessionLoad||0),0)/g.length).toFixed(0);
                 const hasCedera=g.some(e=>e.cedera==='Ya');
