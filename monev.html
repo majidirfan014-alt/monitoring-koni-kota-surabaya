@@ -23,12 +23,42 @@
         @keyframes toastIn{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}
         @keyframes toastOut{from{opacity:1}to{opacity:0;transform:translateX(120%)}}
         .chart-box{position:relative;width:100%}.chart-box canvas{position:absolute;top:0;left:0;width:100%!important;height:100%!important}
+
+        /* SIDEBAR - Pure CSS (no Tailwind responsive dependency) */
+        #sidebar {
+            position: fixed; top: 0; left: 0; height: 100%; width: 14rem;
+            background: #fff; box-shadow: 0 10px 15px -3px rgba(0,0,0,.1);
+            z-index: 50; transform: translateX(-100%);
+            transition: transform 0.3s ease-in-out;
+        }
+        body.dark #sidebar { background: #1f2937; }
+        #sidebar.open { transform: translateX(0); }
+
+        @media (min-width: 1024px) {
+            #sidebar { transform: translateX(0); }
+            #sidebar.open { transform: translateX(0); }
+        }
+
+        #sidebarOverlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,.5);
+            z-index: 40; display: none;
+        }
+        #sidebarOverlay.show { display: block; }
+
+        header.main-header { margin-left: 0; transition: margin-left 0.3s ease-in-out; }
+        main.main-content { margin-left: 0; transition: margin-left 0.3s ease-in-out; }
+        @media (min-width: 1024px) {
+            header.main-header, main.main-content { margin-left: 14rem; }
+        }
+
+        #hamburgerBtn { display: block; }
+        @media (min-width: 1024px) { #hamburgerBtn { display: none; } }
     </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 min-h-screen transition-colors">
 
     <!-- SIDEBAR -->
-    <aside id="sidebar" class="fixed top-0 left-0 h-full w-56 bg-white dark:bg-gray-800 shadow-xl z-50 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out no-print">
+    <aside id="sidebar" class="no-print">
         <div class="px-4 py-3 border-b dark:border-gray-700">
             <h1 class="text-sm font-bold text-primary-700 dark:text-primary-300"><i class="fas fa-clipboard-check mr-1.5"></i>Tim Monev</h1>
         </div>
@@ -60,12 +90,12 @@
         </div>
     </aside>
 
-    <div id="sidebarOverlay" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden no-print" onclick="toggleSidebar()"></div>
+    <div id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
     <!-- HEADER -->
-    <header class="lg:ml-56 bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-30 no-print">
+    <header class="main-header bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-30 no-print">
         <div class="flex items-center justify-between px-3 py-2">
-            <button onclick="toggleSidebar()" class="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+            <button id="hamburgerBtn" onclick="toggleSidebar()" class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
                 <i class="fas fa-bars text-gray-600 dark:text-gray-300 text-sm"></i>
             </button>
             <h2 id="pageTitle" class="font-bold text-gray-800 dark:text-white text-xs sm:text-sm">Form Input Laporan Monev</h2>
@@ -76,7 +106,7 @@
     </header>
 
     <!-- MAIN -->
-    <main class="lg:ml-56 p-2 sm:p-3">
+    <main class="main-content p-2 sm:p-3">
 
         <!-- ===== PAGE: FORM ===== -->
         <div id="pageForm">
@@ -521,7 +551,7 @@
             if(p==='monitorPelatih')initMonitorPelatih();
             if(p==='monitorAtlet')initMonitorAtlet();
             if(p==='prediksiLawan')renderPrediksiLawan();
-            toggleSidebar(false);
+            closeSidebar();
         }
 
         // FILTER MONEV
@@ -833,9 +863,16 @@
         }
 
         // SIDEBAR
-        function toggleSidebar(show){const s=document.getElementById('sidebar'),o=document.getElementById('sidebarOverlay');if(show===undefined)show=!s.classList.contains('translate-x-0');if(show){s.classList.remove('-translate-x-full');s.classList.add('translate-x-0');o.classList.remove('hidden')}else{s.classList.remove('translate-x-0');s.classList.add('-translate-x-full');o.classList.add('hidden')}}
-        function toggleDarkMode(){document.documentElement.classList.toggle('dark');sessionStorage.setItem('darkMode',document.documentElement.classList.contains('dark'))}
-        if(sessionStorage.getItem('darkMode')==='true')document.documentElement.classList.add('dark');
+        function toggleSidebar(){
+            var s=document.getElementById('sidebar');
+            var o=document.getElementById('sidebarOverlay');
+            var isOpen=s.classList.contains('open');
+            if(isOpen){s.classList.remove('open');o.classList.remove('show')}
+            else{s.classList.add('open');o.classList.add('show')}
+        }
+        function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('show')}
+        function toggleDarkMode(){document.documentElement.classList.toggle('dark');document.body.classList.toggle('dark');sessionStorage.setItem('darkMode',document.documentElement.classList.contains('dark'))}
+        if(sessionStorage.getItem('darkMode')==='true'){document.documentElement.classList.add('dark');document.body.classList.add('dark')}
 
         // TOAST
         function showToast(m,t){const c=document.getElementById('toastContainer'),s=document.createElement('div');const bg=t==='success'?'bg-green-500':t==='danger'?'bg-red-500':'bg-red-500';const ic=t==='success'?'fa-check-circle':t==='danger'?'fa-trash-can':'fa-exclamation-circle';s.className=`toast ${bg} text-white px-4 py-2.5 rounded-lg shadow-lg text-[11px] font-medium flex items-center gap-2 max-w-xs`;s.innerHTML=`<i class="fas ${ic}"></i><span>${m}</span>`;c.appendChild(s);setTimeout(()=>s.remove(),3000)}
