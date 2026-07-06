@@ -666,7 +666,7 @@
             document.getElementById('totalSesi').textContent=sesiBulanIni.length;
             let totalH=0,totalA=0,totalJ=0;
             entries.forEach(e=>{
-                const hadir=(e.atlet||[])(a=>a.status==='Hadir').length;
+                const hadir=(e.atlet||[]).filter(a=>a.status==='Hadir').length;
                 const total=e.atlet.length;
                 if(total){totalH+=hadir;totalA+=total}
                 totalJ+=e.totalJam||0;
@@ -676,7 +676,7 @@
             if(!data.length){tb.innerHTML='';em.classList.remove('hidden');renderCharts(data);return}
             em.classList.add('hidden');
             tb.innerHTML=data.map(d=>{
-                const hadir=(d.atlet||[])(a=>a.status==='Hadir').length;
+                const hadir=(d.atlet||[]).filter(a=>a.status==='Hadir').length;
                 return`<tr class="border-t dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
                     <td class="px-2 py-1.5 whitespace-nowrap dark:text-gray-200">${d.tanggal}</td>
                     <td class="px-2 py-1.5 font-medium dark:text-gray-200">${d.namaPelatih}</td>
@@ -712,14 +712,14 @@
             const lb=s.map(d=>d.tanggal.slice(5));
             const dk=document.documentElement.classList.contains('dark'),tc=dk?'#9ca3af':'#6b7280',gc=dk?'#374151':'#e5e7eb';
             chartInstances.jam=new Chart(document.getElementById('chartJam'),{type:'bar',data:{labels:lb,datasets:[{label:'Jam',data:s.map(d=>d.totalJam||0),backgroundColor:'rgba(59,130,246,.7)',borderRadius:3,barPercentage:.7}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:tc,font:{size:9}}}},scales:{x:{ticks:{color:tc,font:{size:8},maxRotation:0},grid:{color:gc}},y:{title:{display:true,text:'Jam',color:tc,font:{size:8}},ticks:{color:tc,font:{size:8}},grid:{color:gc}}}}});
-            const absen={Hadir:0,Sakit:0,Izin:0,Alpa:0};s.forEach(d=>(d.atlet||[])(a=>{if(absen[a.status]!==undefined)absen[a.status]++}));
+            const absen={Hadir:0,Sakit:0,Izin:0,Alpa:0};s.forEach(d=>(d.atlet||[]).filter(a=>{if(absen[a.status]!==undefined)absen[a.status]++}));
             chartInstances.absen=new Chart(document.getElementById('chartAbsen'),{type:'doughnut',data:{labels:Object.keys(absen),datasets:[{data:Object.values(absen),backgroundColor:['#22c55e','#eab308','#f97316','#ef4444'],borderWidth:2,borderColor:dk?'#1f2937':'#fff',hoverOffset:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:tc,font:{size:9},boxWidth:10,padding:6}}}}});
         }
 
         // DETAIL
         function showDetail(id){
             const d=entries.find(e=>e.id===id);if(!d)return;
-            const hadir=(d.atlet||[])(a=>a.status==='Hadir').length;
+            const hadir=(d.atlet||[]).filter(a=>a.status==='Hadir').length;
             const atletList=d.atlet.map((a,i)=>`<tr class="border-t dark:border-gray-600"><td class="px-2 py-1 dark:text-gray-200">${i+1}</td><td class="px-2 py-1 font-medium dark:text-gray-200">${a.nama||'-'}</td><td class="px-2 py-1 text-center"><span class="px-1 py-0.5 rounded text-[9px] font-bold ${a.status==='Hadir'?'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400':a.status==='Alpa'?'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400':'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'}">${a.status}</span></td><td class="px-2 py-1 text-center text-[10px] dark:text-gray-200">${a.jamDatang||'-'}</td><td class="px-2 py-1 text-center text-[10px] dark:text-gray-200">${a.jamPulang||'-'}</td></tr>`).join('');
             document.getElementById('detailContent').innerHTML=`
                 <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-2"><h4 class="font-bold text-primary-600 dark:text-primary-300 text-[11px]"><i class="fas fa-info-circle mr-1"></i>Informasi Sesi</h4></div>
@@ -746,7 +746,7 @@
             const d=getFiltered();
             if(!d.length){showToast('Tidak ada data','error');return}
             const hd=['Tanggal','Pelatih','Cabor','Sesi','Tahapan','Jam Datang','Jam Pulang','Total Jam','Jenis','Jumlah Atlet','Hadir','Sakit','Izin','Alpa','Evaluasi'];
-            const rw=d.map(e=>{const h=(e.atlet||[])(a=>a.status==='Hadir').length,s=(e.atlet||[])(a=>a.status==='Sakit').length,i=(e.atlet||[])(a=>a.status==='Izin').length,a=(e.atlet||[])(a=>a.status==='Alpa').length;return[e.tanggal,e.namaPelatih,e.cabor,e.sesi,e.tahapan,e.jamDatang,e.jamPulang,e.totalJam,e.jenisLatihan.join(';'),e.atlet.length,h,s,i,a,e.evaluasi]});
+            const rw=d.map(e=>{const h=(e.atlet||[]).filter(a=>a.status==='Hadir').length,s=(e.atlet||[]).filter(a=>a.status==='Sakit').length,i=(e.atlet||[]).filter(a=>a.status==='Izin').length,a=(e.atlet||[]).filter(a=>a.status==='Alpa').length;return[e.tanggal,e.namaPelatih,e.cabor,e.sesi,e.tahapan,e.jamDatang,e.jamPulang,e.totalJam,e.jenisLatihan.join(';'),e.atlet.length,h,s,i,a,e.evaluasi]});
             let csv='\uFEFF'+hd.join(',')+'\n'+rw.map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
             const b=new Blob([csv],{type:'text/csv;charset=utf-8;'}),a=document.createElement('a');
             a.href=URL.createObjectURL(b);a.download=`logbook_pelatih_${new Date().toISOString().split('T')[0]}.csv`;a.click();
