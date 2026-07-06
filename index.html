@@ -654,6 +654,9 @@
     </div>
 
     <script>
+        // ===== AUTO CACHE BUST =====
+        (function(){var v='20260706-3';var s=localStorage.getItem('appVersion');if(s&&s!==v){localStorage.removeItem('appVersion');location.reload(true)}else{localStorage.setItem('appVersion',v)}})();
+
         // ===== FIREBASE CONFIG =====
         const firebaseConfig = {
             apiKey: "AIzaSyBxCRCpCn6BcwnWv7KL1dvQOLWTbJVO_0Y",

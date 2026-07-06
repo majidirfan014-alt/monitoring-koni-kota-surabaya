@@ -483,6 +483,9 @@
     <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2"></div>
 
     <script>
+        // ===== AUTO CACHE BUST =====
+        (function(){var v='20260706-3';var s=localStorage.getItem('appVersion');if(s&&s!==v){localStorage.removeItem('appVersion');location.reload(true)}else{localStorage.setItem('appVersion',v)}})();
+
         // ===== SIDEBAR / DARK MODE / TOAST (always work, even if Firebase fails) =====
         function toggleSidebar(){var s=document.getElementById('sidebar');var o=document.getElementById('sidebarOverlay');if(s.classList.contains('open')){s.classList.remove('open');o.classList.remove('show')}else{s.classList.add('open');o.classList.add('show')}}
         function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('show')}
