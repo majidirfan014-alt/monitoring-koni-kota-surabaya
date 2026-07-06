@@ -456,7 +456,7 @@
         const db=firebase.firestore();
 
         // ===== FIREBASE HELPERS =====
-        async function fbAddDoc(collection,data){try{const docRef=await db.collection(collection).add(data);return docRef.id}catch(e){console.error('Error adding document:',e);showToast('Gagal terhubung ke server/database','danger');throw e}}
+        async function fbAddDoc(collection,data){try{const payload={...data};delete payload.id;const docRef=await db.collection(collection).add(payload);return docRef.id}catch(e){console.error('Error adding document:',e);showToast('Gagal terhubung ke server/database','danger');throw e}}
         async function fbGetDocs(collection,conditions=[]){try{let ref=db.collection(collection);conditions.forEach(c=>{ref=ref.where(c.field,c.operator,c.value)});const snapshot=await ref.get();return snapshot.docs.map(doc=>({id:doc.id,...doc.data()}))}catch(e){console.error('Error getting documents:',e);showToast('Gagal terhubung ke server/database','danger');throw e}}
         async function fbDeleteDoc(collection,id){try{await db.collection(collection).doc(id).delete()}catch(e){console.error('Error deleting document:',e);showToast('Gagal terhubung ke server/database','danger');throw e}}
         async function fbUpdateDoc(collection,id,data){try{await db.collection(collection).doc(id).update(data)}catch(e){console.error('Error updating document:',e);showToast('Gagal terhubung ke server/database','danger');throw e}}
@@ -522,7 +522,7 @@
         }
 
         // FILTER MONEV
-        function getFiltered(){let d=[...dataMonev];const f=document.getElementById('filterFrom').value,t=document.getElementById('filterTo').value,q=document.getElementById('filterSearch').value.toLowerCase();if(f)d=d.filter(e=>e.tanggal>=f);if(t)d=d.filter(e=>e.tanggal<=t);if(q)d=d.filter(e=>e.namaTim.toLowerCase().includes(q)||e.lokasi.toLowerCase().includes(q)||e.cabor.toLowerCase().includes(q));return d.sort((a,b)=>(b.tanggal||'').localeCompare(a.tanggal||''))}
+        function getFiltered(){let d=[...dataMonev];const f=document.getElementById('filterFrom').value,t=document.getElementById('filterTo').value,q=document.getElementById('filterSearch').value.toLowerCase();if(f)d=d.filter(e=>e.tanggal>=f);if(t)d=d.filter(e=>e.tanggal<=t);if(q)d=d.filter(e=>(e.namaTim||"""").toLowerCase().includes(q)||(e.lokasi||"""").toLowerCase().includes(q)||(e.cabor||"""").toLowerCase().includes(q));return d.sort((a,b)=>(b.tanggal||'').localeCompare(a.tanggal||''))}
 
         // RENDER HISTORY
         let chartInstances={};function destroyCharts(){Object.values(chartInstances).forEach(c=>c.destroy());chartInstances={}}
@@ -579,7 +579,7 @@
         document.getElementById('detailModal').addEventListener('click',e=>{if(e.target.id==='detailModal')closeModal()});
 
         // DELETE
-        async function deleteEntry(id){if(!confirm('Apakah Anda yakin ingin menghapus data ini?'))return;try{await fbDeleteDoc('monev_laporan',id);dataMonev=dataMonev.filter(e=>e.id!==id);renderHistory();showToast('Data berhasil dihapus!','danger')}catch(e){showToast('Gagal menghapus data!','error')}}
+        async function deleteEntry(id){if(!confirm('Apakah Anda yakin ingin menghapus data ini?'))return;try{await fbDeleteDoc('monev_laporan',id);dataMonev=dataMonev.filter(e=>e.id!==id);renderHistory();showToast('Data berhasil dihapus!','success')}catch(e){showToast('Gagal menghapus data!','danger')}}
 
         // EXPORT MONEV
         function exportCSV(){const d=getFiltered();if(!d.length){showToast('Tidak ada data','error');return}const hd=['Tanggal','Jam','Tim Monev','Cabor','Lokasi','Pelatih Hadir','Jumlah Atlet','Tahapan','Durasi','Kualitas Instruksi','Saran'];const rw=d.map(e=>[e.tanggal,e.jam,e.namaTim,e.cabor,e.lokasi,e.pelatihHadir,e.jumlahAtlet,e.tahapan,e.durasi,e.kualitasInstruksi,e.saran]);let csv='\uFEFF'+hd.join(',')+'\n'+rw.map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');const b=new Blob([csv],{type:'text/csv;charset=utf-8;'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`monev_${new Date().toISOString().split('T')[0]}.csv`;a.click();showToast('CSV didownload!','success')}
@@ -610,7 +610,7 @@
             em.classList.add('hidden');
             tb.innerHTML=data.map(d=>{
                 const hadir=d.atlet?d.atlet.filter(a=>a.status==='Hadir').length:0;
-                return`<tr class="border-t dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50"><td class="px-2 py-1.5 whitespace-nowrap dark:text-gray-200">${d.tanggal}</td><td class="px-2 py-1.5 font-medium dark:text-gray-200">${d.namaPelatih}</td><td class="px-2 py-1.5 dark:text-gray-200"><span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">${d.cabor||'-'}</span></td><td class="px-2 py-1.5 dark:text-gray-200">${d.sesi||'-'}</td><td class="px-2 py-1.5 dark:text-gray-200"><span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">${d.tahapan}</span></td><td class="px-2 py-1.5 text-center dark:text-gray-200">${hadir}/${d.atlet?d.atlet.length:0}</td><td class="px-2 py-1.5 text-center"><button onclick="showDetailPelatih(${d.id})" class="text-primary-500 hover:text-primary-700"><i class="fas fa-eye text-xs"></i></button></td></tr>`}).join('');
+                return`<tr class="border-t dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50"><td class="px-2 py-1.5 whitespace-nowrap dark:text-gray-200">${d.tanggal}</td><td class="px-2 py-1.5 font-medium dark:text-gray-200">${d.namaPelatih}</td><td class="px-2 py-1.5 dark:text-gray-200"><span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">${d.cabor||'-'}</span></td><td class="px-2 py-1.5 dark:text-gray-200">${d.sesi||'-'}</td><td class="px-2 py-1.5 dark:text-gray-200"><span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">${d.tahapan}</span></td><td class="px-2 py-1.5 text-center dark:text-gray-200">${hadir}/${d.atlet?d.atlet.length:0}</td><td class="px-2 py-1.5 text-center"><button onclick="showDetailPelatih('${d.id}')" class="text-primary-500 hover:text-primary-700"><i class="fas fa-eye text-xs"></i></button></td></tr>`}).join('');
             renderChartPelatih(data);
         }
         function renderProfilePelatih(){
@@ -678,7 +678,7 @@
             });
             const result=[];
             for(const name in groups){
-                const g=groups[name].entries.sort((a,b)=>b.tanggal.localeCompare(a.tanggal));
+                const g=groups[name].entries.sort((a,b)=>(b.tanggal||"""").localeCompare(a.tanggal||""""));
                 const avgRPE=(g.reduce((s,e)=>s+(e.rpe||0),0)/g.length).toFixed(1);
                 const avgLoad=(g.reduce((s,e)=>s+(e.sessionLoad||0),0)/g.length).toFixed(0);
                 const hasCedera=g.some(e=>e.cedera==='Ya');
@@ -795,7 +795,7 @@
             let filtered=[...allData];
             if(roleF)filtered=filtered.filter(d=>d.role===roleF);
             if(q)filtered=filtered.filter(d=>d.nama&&d.nama.toLowerCase().includes(q));
-            filtered.sort((a,b)=>b.id-a.id);
+            filtered.sort((a,b)=>(b.tanggal||'').localeCompare(a.tanggal||''));
 
             document.getElementById('plTotal').textContent=allData.length;
             document.getElementById('plPelatih').textContent=allData.filter(d=>d.role==='Pelatih').length;
