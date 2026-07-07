@@ -455,7 +455,7 @@
             </div>
         </div>
     </main>
-    <div id="detailModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-3">
+    <div id="detailModal" class="fixed inset-0 bg-black/50 z-[100] hidden items-center justify-center p-3">
         <div class="bg-white dark:bg-gray-800 rounded-xl max-w-lg w-full max-h-[85vh] overflow-y-auto p-4">
             <div class="flex items-center justify-between mb-3">
                 <h3 id="modalTitle" class="font-bold text-sm text-gray-800 dark:text-white">Detail</h3>
@@ -469,7 +469,7 @@
     </div>
 
     <!-- MODAL CHART ATLET -->
-    <div id="chartModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-3">
+    <div id="chartModal" class="fixed inset-0 bg-black/50 z-[100] hidden items-center justify-center p-3">
         <div class="bg-white dark:bg-gray-800 rounded-xl max-w-lg w-full max-h-[85vh] overflow-y-auto p-4">
             <div class="flex items-center justify-between mb-3">
                 <h3 id="chartModalTitle" class="font-bold text-sm text-gray-800 dark:text-white">Grafik Atlet</h3>
@@ -507,7 +507,7 @@
 
         // ===== FIREBASE HELPERS =====
         async function fbAddDoc(collection,data){try{const payload={...data};delete payload.id;const docRef=await db.collection(collection).add(payload);return docRef.id}catch(e){console.error('Error adding document:',e);showToast('Gagal terhubung ke server/database','danger');throw e}}
-        async function fbGetDocs(collection,conditions=[]){try{let ref=db.collection(collection);conditions.forEach(c=>{ref=ref.where(c.field,c.operator,c.value)});const snapshot=await ref.get();return snapshot.docs.map(doc=>({id:doc.id,...doc.data()}))}catch(e){console.error('Error getting documents:',e);showToast('Gagal terhubung ke server/database','danger');throw e}}
+        async function fbGetDocs(collection,conditions=[]){try{let ref=db.collection(collection);conditions.forEach(c=>{ref=ref.where(c.field,c.operator,c.value)});const snapshot=await ref.get();return snapshot.docs.map(doc=>({...doc.data(),id:doc.id}))}catch(e){console.error('Error getting documents:',e);showToast('Gagal terhubung ke server/database','danger');throw e}}
         async function fbDeleteDoc(collection,id){try{await db.collection(collection).doc(id).delete()}catch(e){console.error('Error deleting document:',e);showToast('Gagal terhubung ke server/database','danger');throw e}}
         async function fbUpdateDoc(collection,id,data){try{await db.collection(collection).doc(id).update(data)}catch(e){console.error('Error updating document:',e);showToast('Gagal terhubung ke server/database','danger');throw e}}
 
@@ -623,9 +623,9 @@
                 <div class="col-span-2 bg-gray-50 dark:bg-gray-700 rounded-lg p-2 mt-1"><h4 class="font-bold text-primary-600 dark:text-primary-300 text-[11px]"><i class="fas fa-lightbulb mr-1"></i>Masukan & Saran</h4></div>
                 <div class="col-span-2"><p class="font-medium dark:text-white whitespace-pre-wrap">${d.saran||'-'}</p></div>
                 ${fotoHtml}</div>`;
-            document.getElementById('detailModal').classList.remove('hidden');
+            var _m=document.getElementById('detailModal');_m.classList.remove('hidden');_m.classList.add('flex');
         }
-        function closeModal(){document.getElementById('detailModal').classList.add('hidden')}
+        function closeModal(){var _m=document.getElementById('detailModal');_m.classList.remove('flex');_m.classList.add('hidden')}
         document.getElementById('detailModal').addEventListener('click',e=>{if(e.target.id==='detailModal')closeModal()});
 
         // DELETE
@@ -711,7 +711,7 @@
                 ${d.evaluasi?`<div class="col-span-2 bg-gray-50 dark:bg-gray-700 rounded-lg p-2 mt-1"><h4 class="font-bold text-primary-600 dark:text-primary-300 text-[11px]"><i class="fas fa-pen mr-1"></i>Evaluasi</h4></div><div class="col-span-2"><p class="dark:text-white whitespace-pre-wrap">${d.evaluasi}</p></div>`:''}
                 ${d.foto?`<div class="col-span-2 bg-gray-50 dark:bg-gray-700 rounded-lg p-2 mt-1"><h4 class="font-bold text-primary-600 dark:text-primary-300 text-[11px]"><i class="fas fa-camera mr-1"></i>Foto</h4></div><div class="col-span-2"><img src="${d.foto}" class="w-full max-h-40 object-cover rounded-lg border dark:border-gray-600"></div>`:''}
             </div>`;
-            document.getElementById('detailModal').classList.remove('hidden');
+            var _m=document.getElementById('detailModal');_m.classList.remove('hidden');_m.classList.add('flex');
         }
 
         // ==========================================
@@ -831,9 +831,9 @@
             document.getElementById('chartModalTitle').textContent=title;
             if(chartAtletInstance)chartAtletInstance.destroy();
             chartAtletInstance=new Chart(document.getElementById('chartAtletLine'),{type:'line',data:{labels,datasets:[{label:title.split(' - ')[0],data,borderColor:color,backgroundColor:bgColor,fill:true,tension:.3,pointRadius:4,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:tc,font:{size:10}}}},scales:{x:{ticks:{color:tc,font:{size:8},maxRotation:0},grid:{color:gc}},y:{title:{display:true,text:yLabel,color:tc,font:{size:10}},ticks:{color:tc,font:{size:8}},grid:{color:gc}}}}});
-            document.getElementById('chartModal').classList.remove('hidden');
+            var _cm=document.getElementById('chartModal');_cm.classList.remove('hidden');_cm.classList.add('flex');
         }
-        function closeChartModal(){document.getElementById('chartModal').classList.add('hidden');if(chartAtletInstance){chartAtletInstance.destroy();chartAtletInstance=null}}
+        function closeChartModal(){var _cm=document.getElementById('chartModal');_cm.classList.remove('flex');_cm.classList.add('hidden');if(chartAtletInstance){chartAtletInstance.destroy();chartAtletInstance=null}}
         document.getElementById('chartModal').addEventListener('click',e=>{if(e.target.id==='chartModal')closeChartModal()});
 
         // PANTAU PREDIKSI LAWAN

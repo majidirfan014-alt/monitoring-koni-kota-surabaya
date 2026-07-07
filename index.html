@@ -688,7 +688,7 @@
                     ref = ref.where(c.field, c.operator, c.value);
                 });
                 const snapshot = await ref.get();
-                return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                return snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
             } catch (e) {
                 console.error('Error getting documents:', e);
                 showToast('Gagal terhubung ke server/database', 'danger');
