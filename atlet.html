@@ -650,7 +650,7 @@
 
         // FOTO
         function compressImage(file,maxWidth,quality){return new Promise(function(resolve,reject){var reader=new FileReader();reader.onload=function(e){var img=new Image();img.onload=function(){var canvas=document.createElement('canvas');var w=img.width,h=img.height;if(w>maxWidth){h=Math.round(h*maxWidth/w);w=maxWidth}canvas.width=w;canvas.height=h;canvas.getContext('2d').drawImage(img,0,0,w,h);resolve(canvas.toDataURL('image/jpeg',quality))};img.onerror=reject;img.src=e.target.result};reader.onerror=reject;reader.readAsDataURL(file)})}
-        function previewFoto(e){const f=e.target.files[0];if(!f)return;if(f.size>5*1024*1024){showToast('Maks 5MB!','error');return}compressImage(f,200,0.3).then(function(base64){document.getElementById('f_foto').dataset.base64=base64;document.getElementById('fotoImg').src=base64;document.getElementById('fotoPreview').classList.remove('hidden')}).catch(function(){showToast('Gagal memproses gambar','error')})}
+        function previewFoto(e){const f=e.target.files[0];if(!f)return;if(f.size>5*1024*1024){showToast('Maks 5MB!','error');return}compressImage(f,800,0.8).then(function(base64){document.getElementById('f_foto').dataset.base64=base64;document.getElementById('fotoImg').src=base64;document.getElementById('fotoPreview').classList.remove('hidden')}).catch(function(){showToast('Gagal memproses gambar','error')})}
         function removeFoto(){document.getElementById('f_foto').value='';document.getElementById('f_foto').dataset.base64='';document.getElementById('fotoImg').src='';document.getElementById('fotoPreview').classList.add('hidden')}
 
         // COLLECT
