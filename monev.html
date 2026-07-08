@@ -310,7 +310,7 @@
             <!-- Profile Card Lisensi Pelatih -->
             <div id="mpProfileCard" class="bg-white dark:bg-gray-800 rounded-lg p-3 shadow mb-2">
                 <h4 class="font-bold text-[11px] text-gray-700 dark:text-gray-200 mb-2"><i class="fas fa-id-card text-yellow-500 mr-1"></i> Profil & Lisensi Pelatih</h4>
-                <div id="mpProfileContent" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2"></div>
+                <div id="mpProfileContent" class="space-y-3"></div>
                 <div id="mpProfileEmpty" class="text-center py-3 text-gray-400 text-[10px]">
                     <i class="fas fa-info-circle mr-1"></i>Belum ada data lisensi pelatih
                 </div>
@@ -476,6 +476,14 @@
                 <button onclick="closeChartModal()" class="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"><i class="fas fa-times text-gray-500 text-xs"></i></button>
             </div>
             <div class="chart-box" style="height:220px"><canvas id="chartAtletLine"></canvas></div>
+        </div>
+    </div>
+
+    <!-- MODAL LISENSI IMAGE -->
+    <div id="lisensiImageModal" class="fixed inset-0 bg-black/70 z-[100] hidden items-center justify-center p-4" onclick="closeLisensiImage()">
+        <div class="relative max-w-3xl w-full">
+            <button onclick="closeLisensiImage()" class="absolute -top-3 -right-3 bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-200 w-8 h-8 rounded-full shadow-lg flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-600 transition z-10"><i class="fas fa-times text-sm"></i></button>
+            <img id="lisensiImageFull" src="" alt="Sertifikat Lisensi" class="w-full max-h-[80vh] object-contain rounded-lg shadow-2xl">
         </div>
     </div>
 
@@ -674,16 +682,24 @@
                 const sisaHari=Math.ceil((berlaku-now)/(1000*60*60*24));
                 const statusColor=isAktif?'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400':'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
                 const statusText=isAktif?(sisaHari<=30?`Aktif (${sisaHari} hari lagi)`:'Aktif'):'Expired';
-                return`<div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-2 border-l-4 ${isAktif?'border-green-500':'border-red-500'}">
-                    <div class="flex items-center justify-between mb-1">
-                        <span class="font-bold text-[11px] dark:text-white">${l.nama||'-'}</span>
-                        <span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${statusColor}">${statusText}</span>
-                    </div>
-                    <div class="grid grid-cols-2 gap-1 text-[10px]">
-                        <div><span class="text-gray-400">No. Lisensi:</span><p class="font-medium dark:text-gray-200">${l.no||'-'}</p></div>
-                        <div><span class="text-gray-400">Jenis:</span><p class="font-medium dark:text-gray-200">${l.jenis||'-'}</p></div>
-                        <div><span class="text-gray-400">Cabor:</span><p class="font-medium dark:text-gray-200">${l.cabor||'-'}</p></div>
-                        <div><span class="text-gray-400">Berlaku:</span><p class="font-medium dark:text-gray-200">${l.berlaku||'-'}</p></div>
+                const imgHtml=l.sertifikat
+                    ? `<img src="${l.sertifikat}" alt="Sertifikat ${l.nama||''}" class="w-full md:w-48 h-32 object-cover rounded-lg border border-gray-600 shadow-sm cursor-pointer hover:opacity-80 transition" onclick="showLisensiImage('${l.sertifikat.replace(/'/g,"\\'")}')">`
+                    : `<div class="w-full md:w-48 h-32 bg-gray-200 dark:bg-gray-600 rounded-lg border border-gray-600 shadow-sm flex items-center justify-center"><span class="text-[10px] text-gray-400 dark:text-gray-300 text-center px-2">Tidak ada unggahan foto sertifikat</span></div>`;
+                return`<div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border-l-4 ${isAktif?'border-green-500':'border-red-500'}">
+                    <div class="flex flex-col md:flex-row items-center gap-6">
+                        <div class="flex-shrink-0">${imgHtml}</div>
+                        <div class="flex-1 w-full">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="font-bold text-[11px] dark:text-white">${l.nama||'-'}</span>
+                                <span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${statusColor}">${statusText}</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4 w-full text-[10px]">
+                                <div><span class="text-gray-400">No. Lisensi:</span><p class="font-medium dark:text-gray-200">${l.no||'-'}</p></div>
+                                <div><span class="text-gray-400">Jenis:</span><p class="font-medium dark:text-gray-200">${l.jenis||'-'}</p></div>
+                                <div><span class="text-gray-400">Cabor:</span><p class="font-medium dark:text-gray-200">${l.cabor||'-'}</p></div>
+                                <div><span class="text-gray-400">Berlaku:</span><p class="font-medium dark:text-gray-200">${l.berlaku||'-'}</p></div>
+                            </div>
+                        </div>
                     </div>
                 </div>`}).join('');
         }
@@ -835,6 +851,17 @@
         }
         function closeChartModal(){var _cm=document.getElementById('chartModal');_cm.classList.remove('flex');_cm.classList.add('hidden');if(chartAtletInstance){chartAtletInstance.destroy();chartAtletInstance=null}}
         document.getElementById('chartModal').addEventListener('click',e=>{if(e.target.id==='chartModal')closeChartModal()});
+
+        // LISENSI IMAGE MODAL
+        function showLisensiImage(src){
+            document.getElementById('lisensiImageFull').src=src;
+            var _m=document.getElementById('lisensiImageModal');_m.classList.remove('hidden');_m.classList.add('flex');
+        }
+        function closeLisensiImage(){
+            var _m=document.getElementById('lisensiImageModal');_m.classList.remove('flex');_m.classList.add('hidden');
+            document.getElementById('lisensiImageFull').src='';
+        }
+        document.getElementById('lisensiImageModal').addEventListener('click',e=>{if(e.target.id==='lisensiImageModal')closeLisensiImage()});
 
         // PANTAU PREDIKSI LAWAN
         async function loadPrediksiLawan(){try{return await fbGetDocs('prediksi_lawan')}catch(e){return[]}}
